@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BlitzFlow">
+<meta name="theme-color" content="#1B4D3E">
+<title>BlitzFlow — Blitz Imobiliare</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0a; --surface:#141414; --surface2:#1c1c1c;
+    --border:#2a2a2a; --accent:#1B4D3E; --accent2:#0d2e25;
+    --text:#f5f5f5; --muted:#6b7280; --success:#22c55e;
+    --danger:#ef4444; --warn:#f59e0b; --wa:#25D366;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+  nav{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+  .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem;color:#fff;}
+  .logo span{color:#4ade80;}
+  .nav-tabs{display:flex;gap:4px;background:var(--bg);padding:4px;border-radius:10px;}
+  .nav-tab{padding:7px 14px;border-radius:7px;border:none;font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:500;cursor:pointer;transition:all 0.2s;background:transparent;color:var(--muted);}
+  .nav-tab.active{background:var(--accent);color:#fff;}
+  .time-badge{font-size:0.75rem;color:var(--muted);background:var(--bg);padding:5px 10px;border-radius:20px;border:1px solid var(--border);font-family:'Syne',sans-serif;font-weight:700;}
+
+  .page{display:none;padding:20px;max-width:860px;margin:0 auto;}
+  .page.active{display:block;}
+  .page-title{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700;margin-bottom:4px;}
+  .page-subtitle{color:var(--muted);font-size:0.85rem;margin-bottom:20px;}
+
+  .lock-screen{position:fixed;inset:0;background:rgba(10,10,10,0.97);display:flex;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(8px);}
+  .lock-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:36px 32px;width:300px;text-align:center;}
+  .lock-icon{font-size:2.2rem;margin-bottom:12px;}
+  .lock-title{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;margin-bottom:4px;}
+  .lock-sub{color:var(--muted);font-size:0.8rem;margin-bottom:20px;}
+  .lock-input{width:100%;padding:11px 14px;background:var(--bg);border:2px solid var(--border);border-radius:10px;color:var(--text);font-size:1rem;text-align:center;letter-spacing:4px;outline:none;margin-bottom:10px;transition:border-color 0.2s;}
+  .lock-input:focus{border-color:var(--accent);}
+  .lock-btn{width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;cursor:pointer;}
+  .lock-error{color:var(--danger);font-size:0.78rem;margin-top:8px;display:none;}
+
+  .time-window-banner{border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+  .twb-open{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);}
+  .twb-closed{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);}
+  .twb-title{font-family:'Syne',sans-serif;font-weight:700;font-size:0.88rem;}
+  .twb-sub{font-size:0.75rem;color:var(--muted);}
+  .twb-open .twb-title{color:var(--success);}
+  .twb-closed .twb-title{color:var(--danger);}
+
+  .window-tabs{display:flex;border:2px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px;}
+  .window-tab{flex:1;padding:12px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:500;transition:all 0.2s;background:transparent;color:var(--muted);position:relative;}
+  .window-tab.active{background:var(--accent);color:#fff;}
+  .tab-badge{position:absolute;top:5px;right:6px;font-size:0.58rem;padding:1px 5px;border-radius:6px;font-weight:700;}
+  .badge-open{background:rgba(34,197,94,0.2);color:var(--success);}
+  .badge-closed{background:rgba(239,68,68,0.2);color:var(--danger);}
+
+  .broker-name-row{margin-bottom:16px;}
+  .broker-name-row input{width:100%;font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;background:var(--surface);border:2px solid var(--border);color:var(--text);padding:11px 15px;border-radius:10px;outline:none;transition:border-color 0.2s;}
+  .broker-name-row input:focus{border-color:var(--accent);}
+  .broker-name-row input::placeholder{color:var(--muted);font-weight:400;font-size:0.87rem;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:12px;}
+  .card-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .card-icon{font-size:1.1rem;}
+  .card-title{font-family:'Syne',sans-serif;font-size:0.8rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);}
+  .field-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
+  .field-row:last-child{border-bottom:none;padding-bottom:0;}
+  .field-label{font-size:0.85rem;color:var(--text);}
+  .field-label .sub{color:var(--muted);font-size:0.75rem;margin-left:5px;}
+  .field-input{width:72px;text-align:center;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);padding:6px 8px;border-radius:8px;font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;outline:none;transition:border-color 0.2s;}
+  .field-input:focus{border-color:var(--accent);}
+  .field-input:disabled{opacity:0.4;cursor:not-allowed;}
+
+  .btn-submit{width:100%;padding:14px;margin-top:16px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:0.92rem;font-weight:700;cursor:pointer;transition:opacity 0.2s,transform 0.1s;}
+  .btn-submit:hover{opacity:0.9;}
+  .btn-submit:active{transform:scale(0.98);}
+  .btn-submit:disabled{opacity:0.4;cursor:not-allowed;}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);color:#fff;padding:11px 22px;border-radius:30px;font-weight:600;font-size:0.85rem;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);z-index:999;background:var(--accent);}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  .loading-overlay{position:fixed;inset:0;background:rgba(10,10,10,0.85);display:flex;align-items:center;justify-content:center;z-index:500;backdrop-filter:blur(4px);}
+  .loading-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 36px;text-align:center;}
+  .loading-spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:#4ade80;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 14px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading-text{font-family:'Syne',sans-serif;font-size:0.9rem;color:var(--muted);}
+
+  .manager-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+  .manager-actions{display:flex;gap:6px;flex-wrap:wrap;}
+
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px;}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;}
+  .stat-val{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:#4ade80;}
+  .stat-lbl{font-size:0.68rem;color:var(--muted);margin-top:2px;}
+
+  .section-label{font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin:16px 0 8px;}
+
+  .status-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:16px;}
+  .status-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:8px;}
+  .status-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;flex-shrink:0;}
+  .av-ok{background:linear-gradient(135deg,#1B4D3E,#0d2e25);color:#fff;}
+  .av-missing{background:var(--surface2);color:var(--muted);}
+  .s-name{font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:95px;}
+  .s-tag{font-size:0.62rem;margin-top:1px;}
+  .tag-both{color:var(--success);}
+  .tag-plan{color:var(--warn);}
+  .tag-exec{color:#60a5fa;}
+  .tag-none{color:var(--danger);}
+
+  .broker-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:10px;overflow:hidden;}
+  .broker-card-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;cursor:pointer;}
+  .broker-info{display:flex;align-items:center;gap:10px;}
+  .broker-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#1B4D3E,#0d2e25);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:0.75rem;color:#fff;}
+  .broker-name-tag{font-family:'Syne',sans-serif;font-weight:700;font-size:0.85rem;}
+  .broker-time-tag{font-size:0.7rem;color:var(--muted);}
+  .type-tag{padding:3px 8px;border-radius:20px;font-size:0.65rem;font-weight:600;}
+  .type-tag.plan{background:rgba(245,158,11,0.15);color:var(--warn);}
+  .type-tag.exec{background:rgba(34,197,94,0.15);color:var(--success);}
+
+  .broker-card-body{padding:0 16px;max-height:0;overflow:hidden;transition:max-height 0.3s ease,padding 0.3s;}
+  .broker-card-body.open{max-height:500px;padding:12px 16px;}
+  .mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+  .mini-stat{background:var(--surface2);border-radius:8px;padding:9px 10px;}
+  .ms-val{font-family:'Syne',sans-serif;font-weight:700;font-size:0.95rem;}
+  .ms-lbl{font-size:0.64rem;color:var(--muted);margin-top:2px;}
+
+  .report-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
+  .report-row:last-child{border-bottom:none;}
+  .rr-label{font-size:0.82rem;}
+  .rr-right{display:flex;gap:8px;align-items:center;}
+  .rr-plan{font-size:0.7rem;color:var(--muted);}
+  .rr-exec{font-family:'Syne',sans-serif;font-weight:700;font-size:0.85rem;min-width:20px;text-align:right;}
+  .pct-bar{width:50px;height:4px;background:var(--surface2);border-radius:3px;overflow:hidden;}
+  .pct-fill{height:100%;border-radius:3px;}
+  .rr-pct{font-family:'Syne',sans-serif;font-size:0.7rem;font-weight:700;padding:2px 6px;border-radius:8px;min-width:38px;text-align:center;}
+  .pct-high{background:rgba(34,197,94,0.15);color:var(--success);}
+  .pct-mid{background:rgba(245,158,11,0.15);color:var(--warn);}
+  .pct-low{background:rgba(239,68,68,0.15);color:var(--danger);}
+  .sub-hdr{padding:5px 0 3px;border-bottom:1px solid var(--border);}
+  .sub-hdr-lbl{font-family:'Syne',sans-serif;font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;}
+
+  .empty-state{text-align:center;padding:40px 20px;color:var(--muted);}
+  .empty-state .big{font-size:2.2rem;margin-bottom:10px;}
+
+  .btn-wa{padding:8px 12px;background:var(--wa);color:#fff;border:none;border-radius:8px;font-size:0.75rem;font-weight:700;cursor:pointer;transition:opacity 0.2s;}
+  .btn-wa:hover{opacity:0.88;}
+  .btn-action{padding:7px 12px;background:transparent;color:#4ade80;border:1px solid #4ade80;border-radius:8px;font-size:0.73rem;font-weight:600;cursor:pointer;transition:all 0.2s;}
+  .btn-action:hover{background:rgba(74,222,128,0.1);}
+  .btn-danger{padding:7px 12px;background:transparent;color:var(--danger);border:1px solid var(--danger);border-radius:8px;font-size:0.73rem;font-weight:600;cursor:pointer;}
+  .btn-secondary{padding:7px 12px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;font-size:0.73rem;font-weight:600;cursor:pointer;transition:all 0.2s;}
+  .btn-secondary:hover{border-color:var(--muted);color:var(--text);}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(10,10,10,0.92);display:flex;align-items:center;justify-content:center;z-index:300;backdrop-filter:blur(6px);}
+  .modal-box{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px;width:min(460px,94vw);max-height:88vh;overflow-y:auto;}
+  .modal-title{font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;margin-bottom:4px;}
+  .modal-sub{color:var(--muted);font-size:0.78rem;margin-bottom:16px;}
+  .wa-input-row{margin-bottom:12px;}
+  .wa-input-row label{display:block;font-size:0.75rem;color:var(--muted);margin-bottom:4px;font-weight:600;}
+  .wa-input{width:100%;padding:10px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:9px;color:var(--text);font-size:0.9rem;outline:none;transition:border-color 0.2s;}
+  .wa-input:focus{border-color:var(--accent);}
+  .wa-preview{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:0.76rem;line-height:1.7;white-space:pre-wrap;max-height:240px;overflow-y:auto;color:var(--text);margin-bottom:14px;}
+  .modal-btns{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;}
+  .btn-cancel{padding:8px 14px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;font-size:0.8rem;cursor:pointer;}
+  .btn-send-wa{padding:9px 16px;background:var(--wa);color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.82rem;cursor:pointer;}
+
+  /* Live indicator */
+  .live-dot{display:inline-block;width:7px;height:7px;background:var(--success);border-radius:50%;animation:pulse 2s infinite;margin-right:5px;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+  @media(max-width:600px){
+    nav{padding:10px 12px;}
+    .page{padding:14px 12px;}
+    .stats-row{grid-template-columns:repeat(2,1fr);}
+    .mini-grid{grid-template-columns:repeat(2,1fr);}
+    .status-grid{grid-template-columns:repeat(2,1fr);}
+    .manager-actions{gap:4px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay" style="display:none;">
+  <div class="loading-box">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">Se încarcă...</div>
+  </div>
+</div>
+
+<div class="lock-screen" id="lockScreen" style="display:none;">
+  <div class="lock-box">
+    <div class="lock-icon">🔒</div>
+    <div class="lock-title">Acces Manager</div>
+    <div class="lock-sub">Introdu parola pentru dashboard</div>
+    <input type="password" class="lock-input" id="lockInput" placeholder="••••••" onkeydown="if(event.key==='Enter')checkPass()">
+    <button class="lock-btn" onclick="checkPass()">Intră în Manager</button>
+    <div class="lock-error" id="lockError">Parolă incorectă.</div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="waModal" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-title">📲 Trimite pe WhatsApp</div>
+    <div class="modal-sub" id="waModalSub"></div>
+    <div class="wa-input-row" id="waPhoneRow" style="display:none;">
+      <label>Număr grup WhatsApp (format internațional)</label>
+      <input type="text" class="wa-input" id="waPhone" placeholder="40712345678">
+    </div>
+    <div id="waGroupNote" style="background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.3);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:0.78rem;color:#22c55e;">
+      ✅ Grupul WhatsApp este configurat — mesajul se trimite direct pe grup
+    </div>
+    <div style="font-size:0.75rem;color:var(--muted);margin-bottom:5px;font-weight:600;">Previzualizare:</div>
+    <div class="wa-preview" id="waPreview"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="document.getElementById('waModal').style.display='none'">Anulează</button>
+      <button class="btn-send-wa" onclick="sendToWhatsApp()">📲 Deschide WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="brokerModal" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-title">👥 Gestionează Echipa</div>
+    <div class="modal-sub">Adaugă sau șterge brokeri</div>
+    <div class="wa-input-row">
+      <label>Adaugă broker nou</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" class="wa-input" id="newBrokerName" placeholder="Nume Prenume" style="flex:1;" onkeydown="if(event.key==='Enter')addBroker()">
+        <button class="btn-send-wa" style="background:var(--accent);white-space:nowrap;" onclick="addBroker()">+ Adaugă</button>
+      </div>
+    </div>
+    <div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;font-weight:600;">Echipa curentă:</div>
+    <div id="brokerListModal" style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;"></div>
+    <div class="modal-btns" style="margin-top:16px;">
+      <button class="btn-cancel" onclick="closeBrokerModal()">Închide</button>
+      <button class="btn-send-wa" style="background:var(--accent);" onclick="saveBrokersToFirebase()">💾 Salvează</button>
+    </div>
+  </div>
+</div>
+
+<nav>
+  <div class="logo">BLITZ<span>Flow</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="tab-broker" onclick="showPage('broker',this)">📋 Broker</button>
+    <button class="nav-tab" id="tab-manager" onclick="tryManager(this)">📊 Manager</button>
+  </div>
+  <div class="time-badge" id="timeBadge">--:--</div>
+</nav>
+
+<!-- BROKER PAGE -->
+<div class="page active" id="page-broker">
+  <div class="page-title">Raportare zilnică</div>
+  <div class="page-subtitle">Completează în intervalul orar alocat</div>
+  <div id="timeBanner"></div>
+  <div class="window-tabs">
+    <button class="window-tab" id="wtPlan" onclick="selectWindow('plan',this)">🌅 Planificare<span class="tab-badge" id="badgePlan"></span></button>
+    <button class="window-tab" id="wtExec" onclick="selectWindow('exec',this)">🌆 Execuție<span class="tab-badge" id="badgeExec"></span></button>
+  </div>
+  <div class="broker-name-row">
+    <input type="text" id="brokerName" placeholder="Numele tău complet (ex: Vas Timea)"/>
+  </div>
+
+  <div id="form-plan" style="display:none;">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🔥</span><span class="card-title">Clienți Hot</span></div>
+      <div class="field-row"><span class="field-label">În lucru</span><input type="number" class="field-input" id="p_hot" min="0" value="0"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🎯</span><span class="card-title">Acțiuni Strategice</span></div>
+      <div class="field-row"><span class="field-label">🔍 Oferte de prospectat</span><input type="number" class="field-input" id="p_oferte_prosp" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">👀 Vizionări <span class="sub">de stabilit</span></span><input type="number" class="field-input" id="p_viz_stab" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">👀 Vizionări <span class="sub">de efectuat</span></span><input type="number" class="field-input" id="p_viz_ef" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">🟰 Finanțare de facilitat</span><input type="number" class="field-input" id="p_fin" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">🔧 Follow-up</span><input type="number" class="field-input" id="p_followup" min="0" value="0"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">📞</span><span class="card-title">Leaduri de Apelat</span></div>
+      <div class="field-row"><span class="field-label">Proprietari</span><input type="number" class="field-input" id="p_prop" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">Cumpărători</span><input type="number" class="field-input" id="p_cumpar" min="0" value="0"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🏠</span><span class="card-title">Prospectări</span></div>
+      <div class="field-row"><span class="field-label">Stabilite</span><input type="number" class="field-input" id="p_prosp_stab" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">De stabilit</span><input type="number" class="field-input" id="p_prosp_dest" min="0" value="0"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">👀</span><span class="card-title">Vizionări</span></div>
+      <div class="field-row"><span class="field-label">Stabilite</span><input type="number" class="field-input" id="p_vizi_stab2" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">De stabilit</span><input type="number" class="field-input" id="p_vizi_dest" min="0" value="0"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🔄</span><span class="card-title">Follow-up Cumpărători</span></div>
+      <div class="field-row"><span class="field-label">De efectuat</span><input type="number" class="field-input" id="p_fu_cumpar" min="0" value="0"></div>
+    </div>
+    <button class="btn-submit" id="btnSubmitPlan" onclick="submitReport('plan')">✅ Trimite Planificarea</button>
+  </div>
+
+  <div id="form-exec" style="display:none;">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🔥</span><span class="card-title">Clienți Hot</span></div>
+      <div class="field-row"><span class="field-label">Contactați <span class="sub">din portofoliu</span></span><input type="number" class="field-input" id="e_hot_port" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">Contactați <span class="sub">noi identificați</span></span><input type="number" class="field-input" id="e_hot_noi" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">🔴 Avansați</span><input type="number" class="field-input" id="e_avansat" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">👀 Vizionări <span class="sub">stabilite</span></span><input type="number" class="field-input" id="e_viz_stab" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">👀 Vizionări <span class="sub">efectuate</span></span><input type="number" class="field-input" id="e_viz_ef" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">🟰 Finanțare</span><input type="number" class="field-input" id="e_fin" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">💰 Oferte de preț</span><input type="number" class="field-input" id="e_oferte_pret" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">🤝 Negocieri</span><input type="number" class="field-input" id="e_negocieri" min="0" value="0"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-icon">📞</span><span class="card-title">Contacte Efectuate</span></div>
+      <div class="field-row"><span class="field-label">Proprietari</span><input type="number" class="field-input" id="e_prop" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">Cumpărători</span><input type="number" class="field-input" id="e_cumpar" min="0" value="0"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🏠</span><span class="card-title">Prospectări</span></div>
+      <div class="field-row"><span class="field-label">Realizate</span><input type="number" class="field-input" id="e_prosp_real" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">Stabilite</span><input type="number" class="field-input" id="e_prosp_stab" min="0" value="0"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">👀</span><span class="card-title">Vizionări</span></div>
+      <div class="field-row"><span class="field-label">Realizate</span><input type="number" class="field-input" id="e_viz_real" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">Stabilite</span><input type="number" class="field-input" id="e_viz_stab2" min="0" value="0"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🔄</span><span class="card-title">Follow-up Cumpărători</span></div>
+      <div class="field-row"><span class="field-label">Realizat</span><input type="number" class="field-input" id="e_fu_real" min="0" value="0"></div>
+    </div>
+    <button class="btn-submit" id="btnSubmitExec" onclick="submitReport('exec')">✅ Trimite Execuția</button>
+  </div>
+</div>
+
+<!-- MANAGER PAGE -->
+<div class="page" id="page-manager">
+  <div class="manager-header">
+    <div>
+      <div class="page-title">Dashboard Manager</div>
+      <div class="page-subtitle" id="managerDate"></div>
+    </div>
+    <div class="manager-actions">
+      <button class="btn-wa" onclick="openWaModal('echipa','zilnic')">📲 Zilnic</button>
+      <button class="btn-wa" onclick="openWaModal('echipa','saptamanal')">📲 Săptămânal</button>
+      <button class="btn-wa" onclick="openWaModal('echipa','lunar')">📲 Lunar</button>
+      <button class="btn-wa" onclick="openWaModal('echipa','anual')">📲 Anual</button>
+      <button class="btn-action" onclick="openBrokerModal()">👥 Echipă</button>
+      <button class="btn-action" onclick="openStandardModal()" style="border-color:#60a5fa;color:#60a5fa;">📊 Standard</button>
+      <button class="btn-danger" onclick="clearToday()">🗑 Azi</button>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;">
+    <span style="font-size:0.82rem;color:var(--muted);white-space:nowrap;">📅 Vizualizezi:</span>
+    <input type="date" id="dateSelector" style="background:var(--surface2);border:1.5px solid var(--border);color:var(--text);padding:7px 12px;border-radius:8px;font-family:DM Sans,sans-serif;font-size:0.85rem;outline:none;flex:1;" onchange="changeDate(this.value)">
+    <button onclick="changeDate('today')" style="padding:7px 12px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:0.75rem;font-weight:700;cursor:pointer;white-space:nowrap;">Azi</button>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-val" id="s_reports">0</div><div class="stat-lbl">Rapoarte azi</div></div>
+    <div class="stat-card"><div class="stat-val" id="s_contacte">0</div><div class="stat-lbl">Contacte totale</div></div>
+    <div class="stat-card"><div class="stat-val" id="s_vizionari">0</div><div class="stat-lbl">Vizionări realizate</div></div>
+    <div class="stat-card"><div class="stat-val" id="s_negocieri">0</div><div class="stat-lbl">Negocieri active</div></div>
+  </div>
+
+  <div class="section-label"><span class="live-dot"></span>Status Echipă Azi — Live</div>
+  <div class="status-grid" id="statusGrid"></div>
+  <div id="teamReportSection"></div>
+  <div id="brokerList"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- FIREBASE SDK -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getDatabase, ref, set, onValue, remove, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+  // ── FIREBASE CONFIG ─────────────────────────────────────
+  const firebaseConfig = {
+    databaseURL: 'https://blitzflow-351d2-default-rtdb.europe-west1.firebasedatabase.app'
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // ── GLOBALS ─────────────────────────────────────────────
+  const PASS = '1234';
+
+  // ── STANDARDE BLITZ ────────────────────────────────────
+  const STANDARDS = {
+    // [conv_prosp, int_plan_prosp, int_real_prosp, contracte_prosp, conv_viz, int_plan_viz, int_real_viz, contracte_viz, contracte_negociere]
+    'Vanzari Ap. PF': [
+      [171, 57, 40, 20, 31, 6, 4, 3, 0],
+      [85, 28, 20, 12, 89, 18, 13, 10, 3],
+      [70, 20, 14, 10, 106, 27, 21, 19, 7],
+      [70, 20, 14, 10, 106, 27, 21, 19, 7],
+      [70, 20, 14, 10, 106, 27, 21, 19, 7],
+    ],
+    'Vanzari Ap. Ansambluri': [
+      [0, 0, 0, 0, 188, 23, 19, 15, 6],
+      [20, 10, 4, 2, 244, 30, 24, 20, 7],
+      [21, 6, 4, 3, 146, 37, 29, 26, 9],
+      [21, 6, 4, 3, 146, 37, 29, 26, 9],
+      [21, 6, 4, 3, 146, 37, 29, 26, 9],
+    ],
+    'Vanzari Case/Terenuri': [
+      [100, 33, 23, 12, 50, 10, 5, 3, 0],
+      [60, 20, 14, 8, 150, 37, 25, 19, 0],
+      [40, 20, 16, 11, 171, 42, 30, 24, 0],
+      [40, 20, 16, 11, 171, 42, 30, 24, 0],
+      [40, 20, 16, 11, 171, 42, 30, 24, 0],
+    ],
+    'Inchirieri Ap.': [
+      [86, 31, 21, 15, 38, 8, 6, 5, 0],
+      [86, 31, 21, 15, 120, 25, 20, 16, 8],
+      [86, 31, 21, 15, 118, 42, 33, 27, 13],
+      [86, 31, 21, 15, 118, 42, 33, 27, 13],
+      [86, 31, 21, 15, 118, 42, 33, 27, 13],
+    ],
+    'Spatii': [
+      [100, 50, 25, 20, 50, 0, 0, 20, 0],
+      [50, 25, 13, 10, 150, 0, 0, 20, 0],
+      [50, 25, 13, 10, 150, 0, 0, 20, 0],
+      [50, 25, 13, 10, 150, 0, 0, 20, 0],
+      [100, 50, 25, 20, 50, 0, 0, 20, 0],
+    ],
+  };
+  const DEPARTMENTS = Object.keys(STANDARDS);
+  const WINDOWS = { plan:{start:6,end:9}, exec:{start:17,end:21} };
+  let unlocked = false;
+  let pendingTab = null;
+  let waText = '';
+  let unsubscribe = null;
+  let selectedDateKey = null; // null = azi
+
+  window.DB = db;
+  window.dbRef = ref;
+  window.dbSet = set;
+  window.dbRemove = remove;
+  window.dbGet = get;
+  window.dbOnValue = onValue;
+
+  // ── HELPERS ─────────────────────────────────────────────
+  function todayKey() {
+    return new Date().toLocaleDateString('ro-RO').replace(/\./g,'-');
+  }
+  function todayStr() { return new Date().toLocaleDateString('ro-RO'); }
+  function getHour() { return new Date().getHours(); }
+  function isWeekend() { const d=new Date().getDay(); return d===0||d===6; }
+  function isOpen(type) {
+    if(isWeekend()) return false;
+    const h=getHour(); return h>=WINDOWS[type].start && h<WINDOWS[type].end;
+  }
+
+  function showToast(msg, color) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.style.background = color||'#1B4D3E';
+    t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2800);
+  }
+  window.showToast = showToast;
+
+  function showLoading(txt) { document.getElementById('loadingText').textContent=txt||'Se încarcă...'; document.getElementById('loadingOverlay').style.display='flex'; }
+  function hideLoading() { document.getElementById('loadingOverlay').style.display='none'; }
+
+  // ── CLOCK ───────────────────────────────────────────────
+  function updateClock() {
+    document.getElementById('timeBadge').textContent = new Date().toLocaleTimeString('ro-RO',{hour:'2-digit',minute:'2-digit'});
+  }
+  updateClock(); setInterval(updateClock, 15000);
+
+  // ── LOCK ────────────────────────────────────────────────
+  window.tryManager = function(btn) {
+    if (unlocked) { showPage('manager', btn); return; }
+    pendingTab = btn;
+    document.getElementById('lockScreen').style.display = 'flex';
+    document.getElementById('lockInput').value = '';
+    document.getElementById('lockError').style.display = 'none';
+    setTimeout(()=>document.getElementById('lockInput').focus(), 100);
+  };
+  window.checkPass = function() {
+    if (document.getElementById('lockInput').value === PASS) {
+      unlocked = true;
+      document.getElementById('lockScreen').style.display = 'none';
+      showPage('manager', pendingTab);
+      initManagerNotifications();
+    } else {
+      document.getElementById('lockError').style.display = 'block';
+      document.getElementById('lockInput').value = '';
+    }
+  };
+
+  window.showPage = function(page, btn) {
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+    document.getElementById('page-'+page).classList.add('active');
+    if (btn) btn.classList.add('active');
+    if (page==='manager') startLiveManager();
+    if (page==='broker') initBrokerPage();
+  };
+
+  // ── BROKER PAGE ─────────────────────────────────────────
+  function initBrokerPage() {
+    const planOpen=isOpen('plan'), execOpen=isOpen('exec');
+    const h=getHour();
+    const dow=new Date().getDay();
+    const weekend=dow===0||dow===6;
+    let html='';
+    if(planOpen) {
+      html=`<div class="time-window-banner twb-open"><span style="font-size:1.3rem">🌅</span><div><div class="twb-title">Planificarea este deschisă</div><div class="twb-sub">Poți completa până la 09:00</div></div></div>`;
+    } else if(execOpen) {
+      html=`<div class="time-window-banner twb-open"><span style="font-size:1.3rem">🌆</span><div><div class="twb-title">Execuția este deschisă</div><div class="twb-sub">Poți completa până la 21:00</div></div></div>`;
+    } else if(weekend) {
+      html=`<div class="time-window-banner twb-closed"><span style="font-size:1.3rem">🔒</span><div><div class="twb-title">Weekend — Fără raportare</div><div class="twb-sub">Raportarea se reia luni la 06:00</div></div></div>`;
+    } else if(h>=9 && h<17) {
+      html=`<div class="time-window-banner twb-closed"><span style="font-size:1.3rem">☕</span><div><div class="twb-title">Pauză între sesiuni</div><div class="twb-sub">Execuția se deschide la 17:00</div></div></div>`;
+    } else {
+      const next=h<6?'Planificarea se deschide la 06:00':'Planificarea se deschide mâine la 06:00';
+      html=`<div class="time-window-banner twb-closed"><span style="font-size:1.3rem">🔒</span><div><div class="twb-title">Interval închis</div><div class="twb-sub">${next}</div></div></div>`;
+    }
+    document.getElementById('timeBanner').innerHTML = html;
+    document.getElementById('badgePlan').textContent = planOpen?'deschis':'închis';
+    document.getElementById('badgePlan').className = 'tab-badge '+(planOpen?'badge-open':'badge-closed');
+    document.getElementById('badgeExec').textContent = execOpen?'deschis':'închis';
+    document.getElementById('badgeExec').className = 'tab-badge '+(execOpen?'badge-open':'badge-closed');
+    // Always show a form
+    if(execOpen) selectWindow('exec', document.getElementById('wtExec'));
+    else selectWindow('plan', document.getElementById('wtPlan'));
+  }
+
+  window.selectWindow = function(type, btn) {
+    document.querySelectorAll('.window-tab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('form-plan').style.display = type==='plan'?'block':'none';
+    document.getElementById('form-exec').style.display = type==='exec'?'block':'none';
+    const open = isOpen(type);
+    const h = getHour();
+    const dow = new Date().getDay();
+    const weekend = dow===0||dow===6;
+    document.querySelectorAll(`#form-${type} .field-input`).forEach(i=>i.disabled=!open);
+    const sb = document.getElementById(type==='plan'?'btnSubmitPlan':'btnSubmitExec');
+    sb.disabled = !open;
+    if(open) {
+      sb.textContent = type==='plan'?'✅ Trimite Planificarea':'✅ Trimite Execuția';
+    } else if(weekend) {
+      sb.textContent = '🔒 Raportarea e închisă în weekend';
+    } else if(type==='plan') {
+      sb.textContent = h<6?'⏰ Planificarea se deschide la 06:00':'⏰ Planificarea s-a închis la 09:00';
+    } else {
+      sb.textContent = h<17?'⏰ Execuția se deschide la 17:00':'⏰ Execuția s-a închis la 21:00';
+    }
+  };
+
+  window.submitReport = async function(type) {
+    if(!isOpen(type)){showToast('⏰ Intervalul orar a expirat!','#ef4444');return;}
+    const name = document.getElementById('brokerName').value.trim();
+    if(!name){alert('Te rog introdu numele tău!');return;}
+
+    const d = { name, type, time: new Date().toLocaleTimeString('ro-RO',{hour:'2-digit',minute:'2-digit'}), date: todayStr() };
+    if(type==='plan') Object.assign(d,{hot:gv('p_hot'),oferte_prosp:gv('p_oferte_prosp'),viz_stab:gv('p_viz_stab'),viz_ef:gv('p_viz_ef'),fin:gv('p_fin'),followup:gv('p_followup'),prop:gv('p_prop'),cumpar:gv('p_cumpar'),prosp_stab:gv('p_prosp_stab'),prosp_dest:gv('p_prosp_dest'),vizi_stab2:gv('p_vizi_stab2'),vizi_dest:gv('p_vizi_dest'),fu_cumpar:gv('p_fu_cumpar')});
+    else Object.assign(d,{hot_port:gv('e_hot_port'),hot_noi:gv('e_hot_noi'),avansat:gv('e_avansat'),viz_stab:gv('e_viz_stab'),viz_ef:gv('e_viz_ef'),fin:gv('e_fin'),oferte_pret:gv('e_oferte_pret'),negocieri:gv('e_negocieri'),prop:gv('e_prop'),cumpar:gv('e_cumpar'),prosp_real:gv('e_prosp_real'),prosp_stab:gv('e_prosp_stab'),viz_real:gv('e_viz_real'),viz_stab2:gv('e_viz_stab2'),fu_real:gv('e_fu_real')});
+
+    showLoading('Se trimite raportul...');
+    const safeName = name.replace(/[^a-zA-Z0-9]/g,'_');
+    const path = `reports/${todayKey()}/${safeName}_${type}`;
+    try {
+      await set(ref(db, path), d);
+      hideLoading();
+      showToast('✅ Raport trimis cu succes!', '#22c55e');
+      document.querySelectorAll(`#form-${type} .field-input`).forEach(i=>i.value=0);
+    } catch(e) {
+      hideLoading();
+      showToast('❌ Eroare la trimitere. Verifică conexiunea.','#ef4444');
+      console.error(e);
+    }
+  };
+
+  window.changeDate = function(val) {
+    if (val === 'today' || !val) {
+      selectedDateKey = null;
+      const today = new Date();
+      const y = today.getFullYear();
+      const m = String(today.getMonth()+1).padStart(2,'0');
+      const d = String(today.getDate()).padStart(2,'0');
+      document.getElementById('dateSelector').value = `${y}-${m}-${d}`;
+    } else {
+      const parts = val.split('-');
+      selectedDateKey = `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    startLiveManager();
+  };
+
+  function getActiveKey() {
+    return selectedDateKey || todayKey();
+  }
+
+  // ── LIVE MANAGER ────────────────────────────────────────
+  function startLiveManager() {
+    // Set date selector to active date
+    const activeKey = getActiveKey();
+    const parts = activeKey.split('-');
+    if (parts.length === 3) {
+      document.getElementById('dateSelector').value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    // Update subtitle
+    const displayDate = selectedDateKey
+      ? new Date(parts[2], parts[1]-1, parts[0]).toLocaleDateString('ro-RO',{weekday:'long',year:'numeric',month:'long',day:'numeric'})
+      : new Date().toLocaleDateString('ro-RO',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    document.getElementById('managerDate').textContent = displayDate;
+    const todayRef = ref(db, `reports/${getActiveKey()}`);
+    if(unsubscribe) unsubscribe();
+    showLoading('Se conectează live...');
+    unsubscribe = onValue(todayRef, (snapshot) => {
+      hideLoading();
+      const data = snapshot.val() || {};
+      const reports = Object.values(data);
+      window._lastReports = reports;
+      renderManager(reports);
+    }, (error) => {
+      hideLoading();
+      showToast('❌ Eroare conexiune Firebase','#ef4444');
+    });
+  }
+
+  // ── RENDER ──────────────────────────────────────────────
+  function calcPct(exec,plan){if(plan===0&&exec===0)return null;if(plan===0&&exec>0)return 'bonus';return Math.round(exec/plan*100);}
+  function pctCls(p){if(p===null||p==='bonus')return 'pct-high';return p>=90?'pct-high':p>=60?'pct-mid':'pct-low';}
+  function pctBar(p){if(p===null||p==='bonus')return '';const c=p>=90?'#22c55e':p>=60?'#f59e0b':'#ef4444';return `<div class="pct-bar"><div class="pct-fill" style="width:${Math.min(p,100)}%;background:${c}"></div></div>`;}
+  function pctLbl(p,exec){if(p===null)return '–';if(p==='bonus')return `🚀+${exec}`;return `${p}%`;}
+  function rRow(label,exec,plan){const p=calcPct(exec,plan);return `<div class="report-row"><span class="rr-label">${label}</span><div class="rr-right"><span class="rr-plan">Plan:${plan}</span><span class="rr-exec">${exec}</span>${pctBar(p)}<span class="rr-pct ${pctCls(p)}">${pctLbl(p,exec)}</span></div></div>`;}
+  function s(arr,key){return arr.reduce((t,r)=>t+(+r[key]||0),0);}
+
+  function renderManager(reports) {
+    const plans=reports.filter(r=>r.type==='plan');
+    const execs=reports.filter(r=>r.type==='exec');
+
+    document.getElementById('s_reports').textContent = reports.length;
+    document.getElementById('s_contacte').textContent = s(execs,'prop')+s(execs,'cumpar');
+    document.getElementById('s_vizionari').textContent = s(execs,'viz_real');
+    document.getElementById('s_negocieri').textContent = s(execs,'negocieri');
+
+    const brokerList = getBrokerNames();
+    const byName = {};
+    reports.forEach(r=>{ if(!byName[r.name])byName[r.name]={}; byName[r.name][r.type]=r; });
+
+    // STATUS GRID
+    document.getElementById('statusGrid').innerHTML = brokerList.map(name=>{
+      const st=byName[name]||{};
+      const init=name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      const hasPlan=!!st.plan, hasExec=!!st.exec;
+      const avCls=(hasPlan||hasExec)?'av-ok':'av-missing';
+      let tag='';
+      if(hasPlan&&hasExec) tag=`<div class="s-tag tag-both">✅ Plan + Exec</div>`;
+      else if(hasPlan) tag=`<div class="s-tag tag-plan">🌅 Plan trimis</div>`;
+      else if(hasExec) tag=`<div class="s-tag tag-exec">🌆 Exec trimisă</div>`;
+      else tag=`<div class="s-tag tag-none">⚠️ Nu a raportat</div>`;
+      return `<div class="status-card"><div class="status-avatar ${avCls}">${init}</div><div><div class="s-name">${name}</div>${tag}</div></div>`;
+    }).join('');
+
+    // TEAM REPORT
+    const teamEl = document.getElementById('teamReportSection');
+    if(plans.length>0 && execs.length>0) {
+      const tPC=s(plans,'prop')+s(plans,'cumpar'),tEC=s(execs,'prop')+s(execs,'cumpar');
+      const tPH=s(plans,'hot'),tEH=s(execs,'hot_port')+s(execs,'hot_noi');
+      const tPVe=s(plans,'viz_ef'),tEVr=s(execs,'viz_real');
+      const tPP=s(plans,'prosp_stab')+s(plans,'prosp_dest'),tEPr=s(execs,'prosp_real');
+      const tPF=s(plans,'fu_cumpar'),tEF=s(execs,'fu_real');
+      const tNeg=s(execs,'negocieri'),tOp=s(execs,'oferte_pret');
+      teamEl.innerHTML=`<div class="section-label">📊 Execuție vs Planificare — Echipă</div><div class="card">
+        <div class="sub-hdr"><span class="sub-hdr-lbl">🔥 Clienți Hot</span></div>
+        ${rRow('Contactați',tEH,tPH)}
+        <div class="sub-hdr" style="margin-top:6px;"><span class="sub-hdr-lbl">🔴 Avansați</span></div>
+        ${rRow('👀 Vizionări efectuate',tEVr,tPVe)}
+        <div class="report-row"><span class="rr-label">💰 Oferte de preț</span><span class="rr-exec">${tOp}</span></div>
+        <div class="report-row"><span class="rr-label">🤝 Negocieri</span><span class="rr-exec">${tNeg}</span></div>
+
+        <div class="sub-hdr" style="margin-top:6px;"><span class="sub-hdr-lbl">📞 Contacte Efectuate</span></div>
+        ${rRow('Total contacte',tEC,tPC)}
+        <div class="sub-hdr" style="margin-top:6px;"><span class="sub-hdr-lbl">🏠 Prospectări</span></div>
+        ${rRow('Realizate',tEPr,tPP)}
+        <div class="sub-hdr" style="margin-top:6px;"><span class="sub-hdr-lbl">🔄 Follow-up Cumpărători</span></div>
+        ${rRow('Realizat',tEF,tPF)}
+      </div>`;
+    } else { teamEl.innerHTML=''; }
+
+    // BROKER CARDS
+    const list = document.getElementById('brokerList');
+    if(reports.length===0){list.innerHTML=`<div class="empty-state"><div class="big">📭</div><p>Niciun raport primit încă.<br>Brokerii completează din tab-ul Broker.</p></div>`;return;}
+    list.innerHTML=`<div class="section-label">👤 Rapoarte Individuale</div>`+reports.map((r,i)=>{
+      const init=r.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      const isPlan=r.type==='plan';const bid=`bd_${i}`;
+      const plan=byName[r.name]?.plan;
+      const pb=(e,p)=>calcPct(e,p);
+      const bdg=(p,exec)=>{if(p===null)return '';const lbl=pctLbl(p,exec);return `<span style="font-size:0.6rem;font-weight:700;padding:1px 4px;border-radius:6px;" class="rr-pct ${pctCls(p)}">${lbl}</span>`;};
+      let fields='';
+      if(isPlan){fields=`<div class="mini-grid">
+        <div class="mini-stat"><div class="ms-val">${r.hot||0}</div><div class="ms-lbl">Hot în lucru</div></div>
+        <div class="mini-stat"><div class="ms-val">${r.prop||0}</div><div class="ms-lbl">Lead. Prop.</div></div>
+        <div class="mini-stat"><div class="ms-val">${r.cumpar||0}</div><div class="ms-lbl">Lead. Cump.</div></div>
+        <div class="mini-stat"><div class="ms-val">${r.oferte_prosp||0}</div><div class="ms-lbl">Oferte prosp.</div></div>
+        <div class="mini-stat"><div class="ms-val">${r.viz_ef||0}</div><div class="ms-lbl">Viz. de efectuat</div></div>
+        <div class="mini-stat"><div class="ms-val">${r.fu_cumpar||0}</div><div class="ms-lbl">F-up Cump.</div></div>
+      </div>`;}
+      else{
+        const pPr=plan?(plan.prop||0)+(plan.cumpar||0):0,ePr=(r.prop||0)+(r.cumpar||0);
+        const pVz=plan?plan.viz_ef||0:0,pPs=plan?(plan.prosp_stab||0)+(plan.prosp_dest||0):0,pFu=plan?plan.fu_cumpar||0:0;
+        fields=`<div class="mini-grid">
+          <div class="mini-stat"><div class="ms-val">${(r.hot_port||0)+(r.hot_noi||0)}</div><div class="ms-lbl">Hot contactați</div></div>
+          <div class="mini-stat"><div class="ms-val">${r.prop||0}/${r.cumpar||0}</div><div class="ms-lbl">Prop/Cump ${bdg(pb(ePr,pPr),ePr)}</div></div>
+          <div class="mini-stat"><div class="ms-val">${r.viz_real||0}</div><div class="ms-lbl">Viz. realizate ${bdg(pb(r.viz_real||0,pVz),r.viz_real||0)}</div></div>
+          <div class="mini-stat"><div class="ms-val">${r.prosp_real||0}/${r.prosp_stab||0}</div><div class="ms-lbl">Prosp. ${bdg(pb(r.prosp_real||0,pPs),r.prosp_real||0)}</div></div>
+          <div class="mini-stat"><div class="ms-val">${r.negocieri||0}</div><div class="ms-lbl">Negocieri</div></div>
+
+          <div class="mini-stat"><div class="ms-val">${r.fu_real||0}</div><div class="ms-lbl">F-up ${bdg(pb(r.fu_real||0,pFu),r.fu_real||0)}</div></div>
+        </div>`;}
+      return `<div class="broker-card"><div class="broker-card-header" onclick="document.getElementById('${bid}').classList.toggle('open')">
+        <div class="broker-info"><div class="broker-avatar">${init}</div><div><div class="broker-name-tag">${r.name}</div><div class="broker-time-tag">${r.date} · ${r.time}</div></div></div>
+        <span class="type-tag ${isPlan?'plan':'exec'}">${isPlan?'🌅 Plan':'🌆 Execuție'}</span>
+      </div><div class="broker-card-body" id="${bid}">${fields}</div></div>`;
+    }).join('');
+  }
+
+  // ── CLEAR ───────────────────────────────────────────────
+  window.clearToday = async function() {
+    showLoading('Se șterge...');
+    try {
+      await remove(ref(db, `reports/${getActiveKey()}`));
+      hideLoading();
+      showToast('🗑 Rapoartele de azi au fost șterse','#6b7280');
+    } catch(e) { hideLoading(); showToast('❌ Eroare la ștergere','#ef4444'); }
+  };
+
+  // ── WHATSAPP ────────────────────────────────────────────
+  window.openWaModal = async function(mode, period) {
+    period = period || 'zilnic';
+    const WA_GROUP = 'https://chat.whatsapp.com/D6POd1Gr2BsBTKrvnfRmOa';
+
+    showLoading('Se generează raportul...');
+
+    let reports = [];
+    let periodLabel = '';
+    const now = new Date();
+
+    if (period === 'zilnic') {
+      reports = window._lastReports || [];
+      periodLabel = todayStr();
+    } else {
+      const snapshot = await window.dbGet(window.dbRef(window.DB, 'reports'));
+      const allData = snapshot.val() || {};
+
+      let startDate, endDate;
+      if (period === 'saptamanal') {
+        // Only Mon-Fri
+        const dow = now.getDay() || 7;
+        startDate = new Date(now); startDate.setDate(now.getDate()-dow+1); startDate.setHours(0,0,0,0);
+        endDate = new Date(now); endDate.setHours(23,59,59,0);
+        periodLabel = `${startDate.toLocaleDateString('ro-RO')} – ${endDate.toLocaleDateString('ro-RO')}`;
+      } else if (period === 'lunar') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth()+1, 0, 23,59,59);
+        periodLabel = now.toLocaleDateString('ro-RO', {month:'long', year:'numeric'});
+      } else if (period === 'anual') {
+        startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getFullYear(), 11, 31, 23,59,59);
+        periodLabel = `Anul ${now.getFullYear()}`;
+      }
+
+      Object.keys(allData).forEach(dateKey => {
+        const parts = dateKey.split('-');
+        if(parts.length!==3) return;
+        const d = new Date(+parts[2], +parts[1]-1, +parts[0]);
+        // Skip weekends for weekly/monthly
+        if(period==='saptamanal'||period==='lunar') { const dw=d.getDay(); if(dw===0||dw===6) return; }
+        if(d>=startDate && d<=endDate) {
+          Object.values(allData[dateKey]).forEach(r=>reports.push(r));
+        }
+      });
+    }
+
+    hideLoading();
+
+    const plans=reports.filter(r=>r.type==='plan');
+    const execs=reports.filter(r=>r.type==='exec');
+    const sum=(arr,key)=>arr.reduce((t,r)=>t+(+r[key]||0),0);
+    const p=(e,pl)=>pl>0?Math.round(e/pl*100):0;
+    const arrow=(pct)=>pct>=90?'✅':pct>=60?'➡️':'⚠️';
+
+    const tPH=sum(plans,'hot'), tEH=sum(execs,'hot_port')+sum(execs,'hot_noi');
+    const tPVe=sum(plans,'viz_ef'), tEVr=sum(execs,'viz_real');
+    const tEVs=sum(execs,'viz_stab2');
+    const tOp=sum(execs,'oferte_pret'), tNeg=sum(execs,'negocieri');
+    const tPC=sum(plans,'prop')+sum(plans,'cumpar'), tEC=sum(execs,'prop')+sum(execs,'cumpar');
+    const tPPr=sum(plans,'prosp_stab')+sum(plans,'prosp_dest');
+    const tEPr=sum(execs,'prosp_real'), tEPs=sum(execs,'prosp_stab');
+    const tPF=sum(plans,'fu_cumpar'), tEF=sum(execs,'fu_real');
+
+    const periodEmoji = period==='zilnic'?'📅':period==='saptamanal'?'📊':period==='lunar'?'🗓️':'📆';
+    const periodTitle = period==='zilnic'?'ZILNIC':period==='saptamanal'?'SĂPTĂMÂNAL':period==='lunar'?'LUNAR':'ANUAL';
+
+    // Format exact ca in WhatsApp-ul echipei
+    waText = `📊 EXECUȚIE VS PLANIFICARE – ECHIPĂ (${periodLabel})
+${'─'.repeat(32)}
+`;
+
+    waText += `
+🔥 CLIENȚI HOT
+Planificat: ${tPH}
+Contactați: ${tEH}
+${arrow(p(tEH,tPH))} Execuție: ${p(tEH,tPH)}%
+`;
+
+    waText += `
+🔴 AVANSAȚI
+`;
+    waText += `👀 Vizionări efectuate: ${tEVr} / ${tPVe}
+${arrow(p(tEVr,tPVe))} ${p(tEVr,tPVe)}%
+`;
+    waText += `👀 Vizionări stabilite: ${tEVs} / ${tPVe}
+${arrow(p(tEVs,tPVe))} ${p(tEVs,tPVe)}%
+`;
+    waText += `💰 Oferte de preț: ${tOp}
+`;
+    waText += `🤝 Negocieri: ${tNeg}
+`;
+
+    waText += `
+📞 CONTACTE EFECTUATE
+Planificat total: ${tPC}
+Realizat: ${tEC}
+${arrow(p(tEC,tPC))} Execuție: ${p(tEC,tPC)}%
+`;
+
+    waText += `
+🏠 PROSPECTĂRI
+Realizate: ${tEPr} / ${tPPr}
+${arrow(p(tEPr,tPPr))} ${p(tEPr,tPPr)}%
+Stabilite: ${tEPs} / ${tPPr}
+${arrow(p(tEPs,tPPr))} ${p(tEPs,tPPr)}%
+`;
+
+    waText += `
+🔄 FOLLOW-UP CUMPĂRĂTORI
+Realizat: ${tEF} / ${tPF}
+${arrow(p(tEF,tPF))} ${p(tEF,tPF)}%
+`;
+
+    // Per broker section for weekly/monthly
+    if(period !== 'zilnic') {
+      waText += `
+${'─'.repeat(32)}
+📈 PROSPECTĂRI & VIZIONĂRI – PE BROKERI
+`;
+      getBrokerNames().forEach(name => {
+        const be=execs.filter(r=>r.name===name);
+        const prosp_real=be.reduce((s,r)=>s+(r.prosp_real||0),0);
+        const prosp_stab=be.reduce((s,r)=>s+(r.prosp_stab||0),0);
+        const viz_real=be.reduce((s,r)=>s+(r.viz_real||0),0);
+        const viz_stab=be.reduce((s,r)=>s+(r.viz_stab2||0),0);
+        waText += `
+💠 ${name}
+`;
+        waText += `🏠 Prospectări: ${prosp_real} realizate / ${prosp_stab} stabilite
+`;
+        waText += `👀 Vizionări: ${viz_real} realizate / ${viz_stab} stabilite
+`;
+      });
+    } else {
+      // Daily: show who hasn't reported
+      const missing=getBrokerNames().filter(b=>!execs.find(r=>r.name===b));
+      if(missing.length>0) waText+=`
+${'─'.repeat(32)}
+⚠️ NU AU RAPORTAT EXECUȚIA:
+${missing.map(m=>`• ${m}`).join('
+')}
+`;
+    }
+
+    waText += `
+${'─'.repeat(32)}
+📱 BlitzFlow | Blitz Imobiliare`;
+
+    document.getElementById('waPreview').textContent = waText;
+    document.getElementById('waModalSub').textContent = `${periodEmoji} Raport ${periodTitle} — ${periodLabel}`;
+    document.getElementById('waPhoneRow').style.display = 'none';
+    document.getElementById('waGroupNote').style.display = 'block';
+    document.getElementById('waModal').style.display = 'flex';
+    window._waGroupLink = WA_GROUP;
+  };
+
+
+  window.sendToWhatsApp = function() {
+    // Use group link directly
+    const groupLink = window._waGroupLink || 'https://chat.whatsapp.com/D6POd1Gr2BsBTKrvnfRmOa';
+    // WhatsApp group links don't support pre-filled text directly
+    // So we copy text to clipboard and open group
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(waText).then(() => {
+        showToast('📋 Mesaj copiat! Lipește-l în grup.', '#25D366');
+      });
+    }
+    setTimeout(() => window.open(groupLink, '_blank'), 500);
+    document.getElementById('waModal').style.display='none';
+  };
+
+  // ── BROKERS ─────────────────────────────────────────────
+  window.getBrokers = function() {
+    try{const s=localStorage.getItem('bf_brokers');if(s)return JSON.parse(s);}catch(e){}
+    return [
+      {name:'Gheorghe Maniu', dept:'Vanzari Ap. PF', luna:1},
+      {name:'Robert Apetrei', dept:'Vanzari Ap. PF', luna:1},
+      {name:'Timea Vas', dept:'Vanzari Ap. PF', luna:1},
+      {name:'Ioana Miloș', dept:'Vanzari Ap. PF', luna:1},
+      {name:'Vlad Manzat', dept:'Vanzari Ap. PF', luna:1},
+      {name:'Cosmin Crețu', dept:'Vanzari Ap. PF', luna:1},
+    ];
+  };
+  window.getBrokerNames = function() { return getBrokers().map(b=>typeof b==='string'?b:b.name); };
+  window.getBrokerInfo = function(name) {
+    const b = getBrokers().find(b=>(typeof b==='string'?b:b.name)===name);
+    if (!b) return {name, dept:'Vanzari Ap. PF', luna:1};
+    if (typeof b==='string') return {name:b, dept:'Vanzari Ap. PF', luna:1};
+    return b;
+  };
+  window.saveBrokers = function(list){try{localStorage.setItem('bf_brokers',JSON.stringify(list));}catch(e){}};
+
+  window.openBrokerModal = function(){renderBrokerModal();document.getElementById('brokerModal').style.display='flex';};
+  window.closeBrokerModal = function(){document.getElementById('brokerModal').style.display='none';};
+  function renderBrokerModal(){
+    const deptOptions = DEPARTMENTS.map(d=>`<option value="${d}">${d}</option>`).join('');
+    const lunaOptions = [1,2,3,4,'5+'].map(l=>`<option value="${l}">Luna ${l}</option>`).join('');
+    document.getElementById('brokerListModal').innerHTML=getBrokers().map((b,i)=>{
+      const name = typeof b==='string'?b:b.name;
+      const dept = typeof b==='string'?'Vanzari Ap. PF':b.dept;
+      const luna = typeof b==='string'?1:b.luna;
+      const init = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      return `<div style="background:var(--surface2);border-radius:10px;padding:10px 12px;margin-bottom:4px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#1B4D3E,#0d2e25);display:flex;align-items:center;justify-content:center;font-family:Syne,sans-serif;font-weight:800;font-size:0.68rem;color:#fff;">${init}</div>
+            <span style="font-size:0.85rem;font-weight:600;">${name}</span>
+          </div>
+          <button onclick="removeBroker(${i})" style="background:transparent;border:none;color:var(--danger);cursor:pointer;font-size:0.9rem;padding:4px 8px;">🗑</button>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <select onchange="updateBrokerDept(${i},this.value)" style="flex:2;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:7px;font-size:0.75rem;outline:none;">
+            ${DEPARTMENTS.map(d=>`<option value="${d}" ${d===dept?'selected':''}>${d}</option>`).join('')}
+          </select>
+          <select onchange="updateBrokerLuna(${i},this.value)" style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:7px;font-size:0.75rem;outline:none;">
+            ${[1,2,3,4,'5+'].map(l=>`<option value="${l}" ${String(l)===String(luna)?'selected':''}>Luna ${l}</option>`).join('')}
+          </select>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  window.addBroker = function(){
+    const input=document.getElementById('newBrokerName');
+    const name=input.value.trim();
+    if(!name)return;
+    if(name.split(' ').length<2){input.style.borderColor='var(--danger)';setTimeout(()=>input.style.borderColor='',2000);showToast('Introdu Nume și Prenume!','#ef4444');return;}
+    const list=getBrokers();
+    if(list.find(b=>(typeof b==='string'?b:b.name)===name)){showToast('Brokerul există deja!','#f59e0b');return;}
+    list.push({name, dept:'Vanzari Ap. PF', luna:1});
+    saveBrokers(list);input.value='';renderBrokerModal();showToast('✅ '+name+' adăugat!');
+  };
+  window.removeBroker = function(i){
+    const list=getBrokers();
+    const name=typeof list[i]==='string'?list[i]:list[i].name;
+    list.splice(i,1);saveBrokers(list);renderBrokerModal();showToast('🗑 '+name+' eliminat','#6b7280');
+  };
+  window.updateBrokerDept = function(i, dept){
+    const list=getBrokers();
+    if(typeof list[i]==='string') list[i]={name:list[i], dept, luna:1};
+    else list[i].dept = dept;
+    saveBrokers(list);showToast('✅ Departament actualizat!');
+  };
+  window.updateBrokerLuna = function(i, luna){
+    const list=getBrokers();
+    const lunaNum = luna==='5+'?5:parseInt(luna);
+    if(typeof list[i]==='string') list[i]={name:list[i], dept:'Vanzari Ap. PF', luna:lunaNum};
+    else list[i].luna = lunaNum;
+    saveBrokers(list);showToast('✅ Luna actualizată!');
+  };
+
+
+  // ── STANDARD REPORT ─────────────────────────────────────
+  window.openStandardModal = async function() {
+    showLoading('Se generează raportul vs standard...');
+
+    // Get monthly data from Firebase
+    const snapshot = await window.dbGet(window.dbRef(window.DB, 'reports'));
+    const allData = snapshot.val() || {};
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth()+1, 0, 23,59,59);
+    const monthLabel = now.toLocaleDateString('ro-RO', {month:'long', year:'numeric'});
+
+    let allExecs = [];
+    Object.keys(allData).forEach(dateKey => {
+      const parts = dateKey.split('-');
+      if(parts.length!==3) return;
+      const d = new Date(+parts[2], +parts[1]-1, +parts[0]);
+      if(d >= monthStart && d <= monthEnd) {
+        Object.values(allData[dateKey]).forEach(r => {
+          if(r.type==='exec') allExecs.push(r);
+        });
+      }
+    });
+
+    hideLoading();
+
+    const brokers = getBrokers();
+    document.getElementById('standardModalSub').textContent = `${monthLabel} — Activitate vs Standard`;
+
+    const pct = (r,s) => s===0 ? (r>0?'🚀':'–') : Math.round(r/s*100)+'%';
+    const cls = (r,s) => {
+      if(s===0) return r>0?'color:#22c55e':'color:var(--muted)';
+      const p = r/s*100;
+      return p>=90?'color:#22c55e':p>=60?'color:#f59e0b':'color:#ef4444';
+    };
+
+    let html = '';
+    let waStdText = `📊 RAPORT LUNAR vs STANDARD — ${monthLabel}
+${'─'.repeat(32)}
+`;
+
+    brokers.forEach(b => {
+      const name = typeof b==='string'?b:b.name;
+      const dept = typeof b==='string'?'Vanzari Ap. PF':b.dept;
+      const lunaIdx = Math.min((typeof b==='string'?1:b.luna), 5) - 1;
+      const std = STANDARDS[dept] ? STANDARDS[dept][lunaIdx] : null;
+      if(!std) return;
+
+      const brokerExecs = allExecs.filter(r=>r.name===name);
+      const convProsp = brokerExecs.reduce((s,r)=>s+(r.prop||0)+(r.cumpar||0),0);
+      const intrReal = brokerExecs.reduce((s,r)=>s+(r.prosp_real||0),0);
+      const intrPlan = brokerExecs.reduce((s,r)=>s+(r.prosp_stab||0),0);
+      const vizReal = brokerExecs.reduce((s,r)=>s+(r.viz_real||0),0);
+      const vizPlan = brokerExecs.reduce((s,r)=>s+(r.viz_stab2||0),0);
+      const neg = brokerExecs.reduce((s,r)=>s+(r.negocieri||0),0);
+
+      // std = [conv_prosp, intalniri_plan_prosp, intalniri_real_prosp, contracte_prosp, conv_viz, intalniri_plan_viz, intalniri_real_viz, contracte_viz]
+      const rows = [
+        ['📞 Conv. tel. prosp.', convProsp, std[0]],
+        ['🏠 Int. planificate prosp.', intrPlan, std[1]],
+        ['✅ Int. realizate prosp.', intrReal, std[2]],
+        ['👀 Int. planificate viz.', vizPlan, std[5]],
+        ['✅ Int. realizate viz.', vizReal, std[6]],
+        ['🤝 Contracte negociere', neg, std[8]||0],
+      ];
+
+      const lunaLabel = (typeof b==='string'?1:b.luna) >= 5 ? '5+' : (typeof b==='string'?1:b.luna);
+      html += `<div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div>
+            <span style="font-family:Syne,sans-serif;font-weight:800;font-size:0.9rem;">${name}</span>
+            <span style="font-size:0.72rem;color:var(--muted);margin-left:8px;">${dept} · Luna ${lunaLabel}</span>
+          </div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+          <tr style="color:var(--muted);font-size:0.7rem;font-weight:700;">
+            <td style="padding:4px 6px;">Activitate</td>
+            <td style="padding:4px 6px;text-align:center;">Realizat</td>
+            <td style="padding:4px 6px;text-align:center;">Standard</td>
+            <td style="padding:4px 6px;text-align:center;">%</td>
+          </tr>
+          ${rows.map(([lbl,real,stand])=>`
+          <tr style="border-top:1px solid var(--border);">
+            <td style="padding:5px 6px;">${lbl}</td>
+            <td style="padding:5px 6px;text-align:center;font-family:Syne,sans-serif;font-weight:700;">${real}</td>
+            <td style="padding:5px 6px;text-align:center;color:var(--muted);">${stand||'–'}</td>
+            <td style="padding:5px 6px;text-align:center;font-weight:700;${cls(real,stand)}">${pct(real,stand)}</td>
+          </tr>`).join('')}
+        </table>
+      </div>`;
+
+      waStdText += `
+💠 ${name} — ${dept} (Luna ${lunaLabel})
+`;
+      rows.forEach(([lbl,real,stand]) => {
+        const p = stand>0?Math.round(real/stand*100):null;
+        const arrow = p===null?'–':p>=90?'✅':p>=60?'➡️':'⚠️';
+        waStdText += `${arrow} ${lbl}: ${real} / ${stand||'–'} ${p!==null?'('+p+'%)':''}
+`;
+      });
+    });
+
+    document.getElementById('standardContent').innerHTML = html || '<div style="text-align:center;color:var(--muted);padding:20px;">Nu există date pentru luna curentă.</div>';
+    document.getElementById('standardModal').style.display = 'flex';
+    window._waStdText = waStdText + `
+${'─'.repeat(32)}
+📱 BlitzFlow | Blitz Imobiliare`;
+  };
+
+  window.sendStandardToWa = function() {
+    const WA_GROUP = 'https://chat.whatsapp.com/D6POd1Gr2BsBTKrvnfRmOa';
+    if(navigator.clipboard && window._waStdText) {
+      navigator.clipboard.writeText(window._waStdText).then(()=>{
+        showToast('📋 Mesaj copiat! Lipește-l în grup.','#25D366');
+      });
+    }
+    setTimeout(()=>window.open(WA_GROUP,'_blank'), 500);
+    document.getElementById('standardModal').style.display='none';
+  };
+
+
+  // ── BROKER FIREBASE SYNC ─────────────────────────────────
+  // Load brokers from Firebase on startup (overrides localStorage)
+  async function loadBrokersFromFirebase() {
+    try {
+      const snap = await window.dbGet(window.dbRef(window.DB, 'config/brokers'));
+      if(snap.val()) {
+        const brokers = snap.val();
+        localStorage.setItem('bf_brokers', JSON.stringify(brokers));
+        return brokers;
+      }
+    } catch(e) { console.warn('Could not load brokers from Firebase:', e); }
+    return getBrokers();
+  }
+
+  window.saveBrokersToFirebase = async function() {
+    const list = getBrokers();
+    try {
+      await window.dbSet(window.dbRef(window.DB, 'config/brokers'), list);
+      localStorage.setItem('bf_brokers', JSON.stringify(list));
+      showToast('💾 Echipa salvată!', '#1B4D3E');
+      closeBrokerModal();
+    } catch(e) {
+      // Fallback to localStorage only
+      localStorage.setItem('bf_brokers', JSON.stringify(list));
+      showToast('💾 Salvat local!', '#f59e0b');
+      closeBrokerModal();
+    }
+  };
+
+  // Auto-advance luna pe data de 1 a lunii urmatoare
+  // startMonth = 'MM.YYYY' — luna si anul in care brokerul a inceput Luna 1
+  async function checkAndAdvanceLuna() {
+    const brokers = getBrokers();
+    let changed = false;
+    const now = new Date();
+    const currentMonth = now.getMonth(); // 0-11
+    const currentYear = now.getFullYear();
+    const isFirstOfMonth = now.getDate() === 1;
+
+    brokers.forEach((b, i) => {
+      if(typeof b === 'string') return;
+      if(b.luna >= 5) return;
+
+      if(!b.startMonth) {
+        // Nu are startMonth setat inca — setam luna curenta ca referinta
+        brokers[i].startMonth = `${String(currentMonth+1).padStart(2,'0')}.${currentYear}`;
+        changed = true;
+        return;
+      }
+
+      // Parse startMonth: MM.YYYY
+      const parts = b.startMonth.split('.');
+      if(parts.length !== 2) return;
+      const startM = parseInt(parts[0]) - 1; // 0-11
+      const startY = parseInt(parts[1]);
+
+      // Luni complete scurse de la start
+      const monthsElapsed = (currentYear - startY) * 12 + (currentMonth - startM);
+
+      // Luna curenta = startLuna + luni scurse, max 5
+      const newLuna = Math.min((b.lunaStart||1) + monthsElapsed, 5);
+
+      if(newLuna > b.luna) {
+        brokers[i].luna = newLuna;
+        changed = true;
+        console.log(`${b.name}: avansat la Luna ${newLuna} (${monthsElapsed} luni de la start)`);
+      }
+    });
+
+    if(changed) {
+      localStorage.setItem('bf_brokers', JSON.stringify(brokers));
+      try {
+        await window.dbSet(window.dbRef(window.DB, 'config/brokers'), brokers);
+        console.log('Luna brokerilor actualizata in Firebase');
+      } catch(e) {}
+    }
+  }
+
+  // Cand managerul seteaza manual luna unui broker
+  window.updateBrokerLuna = function(i, luna) {
+    const list = getBrokers();
+    const lunaNum = luna==='5+'?5:parseInt(luna);
+    const now = new Date();
+    // startMonth = luna CURENTA (avansarea se face de la 1 ale lunii urmatoare)
+    const startMonth = `${String(now.getMonth()+1).padStart(2,'0')}.${now.getFullYear()}`;
+
+    if(typeof list[i]==='string') {
+      list[i] = {name:list[i], dept:'Vanzari Ap. PF', luna:lunaNum, lunaStart:lunaNum, startMonth};
+    } else {
+      list[i].luna = lunaNum;
+      list[i].lunaStart = lunaNum; // luna de la care incepe numaratoarea
+      list[i].startMonth = startMonth;
+    }
+    saveBrokers(list);
+    showToast('✅ Luna setată — avansare automată pe 1 ale lunii!');
+    renderBrokerModal();
+  };
+
+
+  // ── NOTIFICĂRI PUSH (doar Manager) ──────────────────────
+  let notifTimers = [];
+
+  async function requestNotifPermission() {
+    if(!('Notification' in window)) return false;
+    if(Notification.permission === 'granted') return true;
+    const perm = await Notification.requestPermission();
+    return perm === 'granted';
+  }
+
+  function sendNotif(title, body, icon) {
+    if(Notification.permission !== 'granted') return;
+    const n = new Notification(title, {
+      body, icon: icon || 'icon-192.png',
+      badge: 'icon-192.png',
+      vibrate: [200, 100, 200]
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+    setTimeout(() => n.close(), 10000);
+  }
+
+  function scheduleNotifications() {
+    // Clear existing timers
+    notifTimers.forEach(t => clearTimeout(t));
+    notifTimers = [];
+
+    const now = new Date();
+    const dow = now.getDay(); // 0=Sun, 6=Sat
+    const isWeekdayToday = dow >= 1 && dow <= 5;
+    const isFriday = dow === 5;
+
+    if(!isWeekdayToday) return; // No notifications on weekends
+
+    function msUntil(h, m) {
+      const target = new Date();
+      target.setHours(h, m, 0, 0);
+      const ms = target - now;
+      return ms > 0 ? ms : null;
+    }
+
+    // Planificare: 08:45 (15 min before 09:00)
+    const msPlan = msUntil(8, 45);
+    if(msPlan) {
+      notifTimers.push(setTimeout(() => {
+        sendNotif('⏰ BlitzFlow — Planificare', 'Sesiunea de planificare se închide în 15 minute! (09:00)');
+      }, msPlan));
+    }
+
+    // Execuție: 20:45 (15 min before 21:00)
+    const msExec = msUntil(20, 45);
+    if(msExec) {
+      notifTimers.push(setTimeout(() => {
+        sendNotif('⏰ BlitzFlow — Execuție', 'Sesiunea de execuție se închide în 15 minute! (21:00)');
+      }, msExec));
+    }
+
+    // Vineri 21:00 — raport săptămânal
+    if(isFriday) {
+      const msWeekly = msUntil(21, 0);
+      if(msWeekly) {
+        notifTimers.push(setTimeout(() => {
+          sendNotif('📊 BlitzFlow — Raport Săptămânal', 'E vineri! Nu uita să trimiți raportul săptămânal pe grup.');
+        }, msWeekly));
+      }
+    }
+
+    // Re-schedule tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(now.getDate() + 1);
+    tomorrow.setHours(0, 1, 0, 0);
+    const msNextDay = tomorrow - now;
+    notifTimers.push(setTimeout(() => scheduleNotifications(), msNextDay));
+  }
+
+  // Init notifications when manager unlocks
+  async function initManagerNotifications() {
+    const hasPermission = await requestNotifPermission();
+    if(hasPermission) {
+      scheduleNotifications();
+      showToast('🔔 Notificările sunt active!', '#1B4D3E');
+    } else {
+      showToast('⚠️ Permite notificările pentru remindere!', '#f59e0b');
+    }
+  }
+
+  // ── INIT ────────────────────────────────────────────────
+  // Load brokers from Firebase then check luna auto-advance
+  loadBrokersFromFirebase().then(() => checkAndAdvanceLuna());
+  initBrokerPage();
+</script>
+
+<script>
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  }
+</script>
+
+<!-- STANDARD MODAL -->
+<div class="modal-overlay" id="standardModal" style="display:none;">
+  <div class="modal-box" style="width:min(680px,96vw);max-height:90vh;">
+    <div class="modal-title">📊 Raport Lunar vs Standard</div>
+    <div class="modal-sub" id="standardModalSub">Activitate luna curentă față de standardul fiecărui broker</div>
+    <div id="standardContent" style="margin-bottom:16px;"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="document.getElementById('standardModal').style.display='none'">Închide</button>
+      <button class="btn-send-wa" style="background:#1B4D3E;" onclick="sendStandardToWa()">📲 Trimite pe WhatsApp</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

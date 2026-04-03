@@ -1,0 +1,32 @@
+{
+  "name": "BlitzFlow — Blitz Imobiliare",
+  "short_name": "BlitzFlow",
+  "description": "Sistem de raportare zilnica pentru echipa Blitz Imobiliare",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#1B4D3E",
+  "orientation": "portrait-primary",
+  "lang": "ro",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
