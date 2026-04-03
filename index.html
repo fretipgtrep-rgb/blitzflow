@@ -887,11 +887,15 @@
     renderBrokerModal();
     document.getElementById('brokerModal').style.display='flex';
   };
-  window.closeBrokerModal = function(){document.getElementById('brokerModal').style.display='none';};
+  window.closeBrokerModal = function(){
+    window._editBrokers = null; // discard unsaved changes
+    document.getElementById('brokerModal').style.display='none';
+  };
   function renderBrokerModal(){
     const deptOptions = DEPARTMENTS.map(d=>`<option value="${d}">${d}</option>`).join('');
     const lunaOptions = [1,2,3,4,'5+'].map(l=>`<option value="${l}">Luna ${l}</option>`).join('');
-    const editList = window._editBrokers || getBrokers();
+    const editList = window._editBrokers || JSON.parse(JSON.stringify(getBrokers()));
+    if(!window._editBrokers) window._editBrokers = editList;
     document.getElementById('brokerListModal').innerHTML=editList.map((b,i)=>{
       const name = typeof b==='string'?b:b.name;
       const dept = typeof b==='string'?'Vanzari Ap. PF':b.dept;
@@ -921,15 +925,19 @@
     const name=input.value.trim();
     if(!name)return;
     if(name.split(' ').length<2){input.style.borderColor='var(--danger)';setTimeout(()=>input.style.borderColor='',2000);showToast('Introdu Nume și Prenume!','#ef4444');return;}
-    const list=getBrokers();
-    if(list.find(b=>(typeof b==='string'?b:b.name)===name)){showToast('Brokerul există deja!','#f59e0b');return;}
-    list.push({name, dept:'Vanzari Ap. PF', luna:1});
-    saveBrokers(list);input.value='';renderBrokerModal();showToast('✅ '+name+' adăugat!');
+    if(!window._editBrokers) window._editBrokers = JSON.parse(JSON.stringify(getBrokers()));
+    if(window._editBrokers.find(b=>(typeof b==='string'?b:b.name)===name)){showToast('Brokerul există deja!','#f59e0b');return;}
+    window._editBrokers.push({name, dept:'Vanzari Ap. PF', luna:1});
+    input.value='';
+    renderBrokerModal();
+    showToast('✅ '+name+' adăugat! Apasă Salvează.');
   };
   window.removeBroker = function(i){
-    const list=getBrokers();
-    const name=typeof list[i]==='string'?list[i]:list[i].name;
-    list.splice(i,1);saveBrokers(list);renderBrokerModal();showToast('🗑 '+name+' eliminat','#6b7280');
+    if(!window._editBrokers) window._editBrokers = JSON.parse(JSON.stringify(getBrokers()));
+    const name=typeof window._editBrokers[i]==='string'?window._editBrokers[i]:window._editBrokers[i].name;
+    window._editBrokers.splice(i,1);
+    renderBrokerModal();
+    showToast('🗑 '+name+' eliminat. Apasă Salvează.');
   };
   window.updateBrokerDept = function(i, dept){
     if(!window._editBrokers) window._editBrokers = JSON.parse(JSON.stringify(getBrokers()));
