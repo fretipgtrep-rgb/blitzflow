@@ -351,6 +351,7 @@
       <button class="btn-action" onclick="openBrokerModal()">👥 Echipă</button>
       <button class="btn-action" onclick="openStandardModal()" style="border-color:#60a5fa;color:#60a5fa;">📊 Standard</button>
       <button class="btn-danger" onclick="clearToday()">🗑 Azi</button>
+      <button class="btn-action" onclick="openImportModal()" style="border-color:#60a5fa;color:#60a5fa;">📥 Import</button>
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;">
@@ -881,12 +882,17 @@
   };
   window.saveBrokers = function(list){try{localStorage.setItem('bf_brokers',JSON.stringify(list));}catch(e){}};
 
-  window.openBrokerModal = function(){renderBrokerModal();document.getElementById('brokerModal').style.display='flex';};
+  window.openBrokerModal = function(){
+    window._editBrokers = JSON.parse(JSON.stringify(getBrokers()));
+    renderBrokerModal();
+    document.getElementById('brokerModal').style.display='flex';
+  };
   window.closeBrokerModal = function(){document.getElementById('brokerModal').style.display='none';};
   function renderBrokerModal(){
     const deptOptions = DEPARTMENTS.map(d=>`<option value="${d}">${d}</option>`).join('');
     const lunaOptions = [1,2,3,4,'5+'].map(l=>`<option value="${l}">Luna ${l}</option>`).join('');
-    document.getElementById('brokerListModal').innerHTML=getBrokers().map((b,i)=>{
+    const editList = window._editBrokers || getBrokers();
+    document.getElementById('brokerListModal').innerHTML=editList.map((b,i)=>{
       const name = typeof b==='string'?b:b.name;
       const dept = typeof b==='string'?'Vanzari Ap. PF':b.dept;
       const luna = typeof b==='string'?1:b.luna;
@@ -926,10 +932,10 @@
     list.splice(i,1);saveBrokers(list);renderBrokerModal();showToast('🗑 '+name+' eliminat','#6b7280');
   };
   window.updateBrokerDept = function(i, dept){
-    const list=getBrokers();
-    if(typeof list[i]==='string') list[i]={name:list[i], dept, luna:1};
-    else list[i].dept = dept;
-    saveBrokers(list);showToast('✅ Departament actualizat!');
+    if(!window._editBrokers) window._editBrokers = JSON.parse(JSON.stringify(getBrokers()));
+    const b = window._editBrokers[i];
+    if(typeof b==='string') window._editBrokers[i]={name:b, dept, luna:1};
+    else window._editBrokers[i].dept = dept;
   };
   window.updateBrokerLuna = function(i, luna){
     const list=getBrokers();
@@ -1070,15 +1076,16 @@
   }
 
   window.saveBrokersToFirebase = async function() {
-    const list = getBrokers();
+    const list = window._editBrokers || getBrokers();
     try {
       await window.dbSet(window.dbRef(window.DB, 'config/brokers'), list);
       localStorage.setItem('bf_brokers', JSON.stringify(list));
+      window._editBrokers = null;
       showToast('💾 Echipa salvată!', '#1B4D3E');
       closeBrokerModal();
     } catch(e) {
-      // Fallback to localStorage only
       localStorage.setItem('bf_brokers', JSON.stringify(list));
+      window._editBrokers = null;
       showToast('💾 Salvat local!', '#f59e0b');
       closeBrokerModal();
     }
@@ -1135,22 +1142,18 @@
 
   // Cand managerul seteaza manual luna unui broker
   window.updateBrokerLuna = function(i, luna) {
-    const list = getBrokers();
+    if(!window._editBrokers) window._editBrokers = JSON.parse(JSON.stringify(getBrokers()));
     const lunaNum = luna==='5+'?5:parseInt(luna);
     const now = new Date();
-    // startMonth = luna CURENTA (avansarea se face de la 1 ale lunii urmatoare)
     const startMonth = `${String(now.getMonth()+1).padStart(2,'0')}.${now.getFullYear()}`;
-
-    if(typeof list[i]==='string') {
-      list[i] = {name:list[i], dept:'Vanzari Ap. PF', luna:lunaNum, lunaStart:lunaNum, startMonth};
+    const b = window._editBrokers[i];
+    if(typeof b==='string') {
+      window._editBrokers[i] = {name:b, dept:'Vanzari Ap. PF', luna:lunaNum, lunaStart:lunaNum, startMonth};
     } else {
-      list[i].luna = lunaNum;
-      list[i].lunaStart = lunaNum; // luna de la care incepe numaratoarea
-      list[i].startMonth = startMonth;
+      window._editBrokers[i].luna = lunaNum;
+      window._editBrokers[i].lunaStart = lunaNum;
+      window._editBrokers[i].startMonth = startMonth;
     }
-    saveBrokers(list);
-    showToast('✅ Luna setată — avansare automată pe 1 ale lunii!');
-    renderBrokerModal();
   };
 
 
@@ -1239,6 +1242,97 @@
     }
   }
 
+
+  // ── IMPORT MANUAL ────────────────────────────────────────
+  window.openImportModal = function() {
+    // Populate broker dropdown
+    const sel = document.getElementById('imp_broker');
+    sel.innerHTML = getBrokerNames().map(n=>`<option value="${n}">${n}</option>`).join('');
+
+    // Set date to today
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth()+1).padStart(2,'0');
+    const d = String(now.getDate()).padStart(2,'0');
+    document.getElementById('imp_date').value = `${y}-${m}-${d}`;
+
+    // Show plan form by default
+    toggleImportForm();
+    document.getElementById('importModal').style.display = 'flex';
+  };
+
+  window.closeImportModal = function() {
+    document.getElementById('importModal').style.display = 'none';
+  };
+
+  window.toggleImportForm = function() {
+    const type = document.getElementById('imp_type').value;
+    document.getElementById('imp_form_plan').style.display = type==='plan'?'block':'none';
+    document.getElementById('imp_form_exec').style.display = type==='exec'?'block':'none';
+  };
+
+  window.resetImportForm = function() {
+    document.querySelectorAll('#importModal input[type="number"]').forEach(i=>i.value=0);
+  };
+
+  function igv(id){return parseInt(document.getElementById(id)?.value)||0;}
+
+  window.saveImportReport = async function() {
+    const name = document.getElementById('imp_broker').value;
+    const type = document.getElementById('imp_type').value;
+    const dateVal = document.getElementById('imp_date').value; // YYYY-MM-DD
+    if(!name || !dateVal) { showToast('Selectează brokerul și data!','#ef4444'); return; }
+
+    // Convert date from YYYY-MM-DD to DD.MM.YYYY
+    const parts = dateVal.split('-');
+    const dateStr = `${parts[2]}.${parts[1]}.${parts[0]}`;
+    const dateKey = `${parts[2]}-${parts[1]}-${parts[0]}`; // Firebase key DD-MM-YYYY
+
+    const d = { name, type, date: dateStr, time: '00:00' };
+
+    if(type==='plan') {
+      Object.assign(d, {
+        hot:igv('ip_hot'), oferte_prosp:igv('ip_oferte_prosp'),
+        viz_stab:igv('ip_viz_stab'), viz_ef:igv('ip_viz_ef'),
+        fin:igv('ip_fin'), followup:igv('ip_followup'),
+        prop:igv('ip_prop'), cumpar:igv('ip_cumpar'),
+        prosp_stab:igv('ip_prosp_stab'), prosp_dest:igv('ip_prosp_dest'),
+        vizi_stab2:igv('ip_vizi_stab2'), vizi_dest:igv('ip_vizi_dest'),
+        fu_cumpar:igv('ip_fu_cumpar')
+      });
+    } else {
+      Object.assign(d, {
+        hot_port:igv('ie_hot_port'), hot_noi:igv('ie_hot_noi'),
+        avansat:igv('ie_avansat'), viz_stab:igv('ie_viz_stab'), viz_ef:igv('ie_viz_ef'),
+        fin:igv('ie_fin'), oferte_pret:igv('ie_oferte_pret'), negocieri:igv('ie_negocieri'),
+        prop:igv('ie_prop'), cumpar:igv('ie_cumpar'),
+        prosp_real:igv('ie_prosp_real'), prosp_stab:igv('ie_prosp_stab'),
+        viz_real:igv('ie_viz_real'), viz_stab2:igv('ie_viz_stab2'),
+        fu_real:igv('ie_fu_real')
+      });
+    }
+
+    showLoading('Se salvează...');
+    const safeName = name.replace(/[^a-zA-Z0-9]/g,'_');
+    const path = `reports/${dateKey}/${safeName}_${type}`;
+
+    try {
+      await window.dbSet(window.dbRef(window.DB, path), d);
+      hideLoading();
+      showToast(`✅ Raport salvat pentru ${name} — ${dateStr}`, '#22c55e');
+      resetImportForm();
+      // Advance date by 1 day for quick consecutive entry
+      const nextDay = new Date(dateVal);
+      nextDay.setDate(nextDay.getDate()+1);
+      const ny=nextDay.getFullYear(),nm=String(nextDay.getMonth()+1).padStart(2,'0'),nd=String(nextDay.getDate()).padStart(2,'0');
+      document.getElementById('imp_date').value=`${ny}-${nm}-${nd}`;
+    } catch(e) {
+      hideLoading();
+      showToast('❌ Eroare la salvare!','#ef4444');
+      console.error(e);
+    }
+  };
+
   // ── INIT ────────────────────────────────────────────────
   // Load brokers from Firebase then check luna auto-advance
   loadBrokersFromFirebase().then(() => checkAndAdvanceLuna());
@@ -1260,6 +1354,79 @@
     <div class="modal-btns">
       <button class="btn-cancel" onclick="document.getElementById('standardModal').style.display='none'">Închide</button>
       <button class="btn-send-wa" style="background:#1B4D3E;" onclick="sendStandardToWa()">📲 Trimite pe WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT MANUAL MODAL -->
+<div class="modal-overlay" id="importModal" style="display:none;">
+  <div class="modal-box" style="width:min(620px,96vw);max-height:92vh;">
+    <div class="modal-title">📥 Import Raport Manual</div>
+    <div class="modal-sub">Introdu datele unui raport trecut direct în Firebase</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+      <div class="wa-input-row" style="margin:0;">
+        <label>Broker</label>
+        <select class="wa-input" id="imp_broker" style="padding:8px 10px;">
+        </select>
+      </div>
+      <div class="wa-input-row" style="margin:0;">
+        <label>Data</label>
+        <input type="date" class="wa-input" id="imp_date" style="padding:8px 10px;">
+      </div>
+      <div class="wa-input-row" style="margin:0;">
+        <label>Tip raport</label>
+        <select class="wa-input" id="imp_type" onchange="toggleImportForm()" style="padding:8px 10px;">
+          <option value="plan">🌅 Planificare</option>
+          <option value="exec">🌆 Execuție</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- PLAN FIELDS -->
+    <div id="imp_form_plan">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="wa-input-row"><label>🔥 Hot în lucru</label><input type="number" class="wa-input" id="ip_hot" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🔍 Oferte prospectat</label><input type="number" class="wa-input" id="ip_oferte_prosp" min="0" value="0"></div>
+        <div class="wa-input-row"><label>👀 Viz. de stabilit</label><input type="number" class="wa-input" id="ip_viz_stab" min="0" value="0"></div>
+        <div class="wa-input-row"><label>👀 Viz. de efectuat</label><input type="number" class="wa-input" id="ip_viz_ef" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🟰 Finanțare</label><input type="number" class="wa-input" id="ip_fin" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🔧 Follow-up</label><input type="number" class="wa-input" id="ip_followup" min="0" value="0"></div>
+        <div class="wa-input-row"><label>📞 Lead. Proprietari</label><input type="number" class="wa-input" id="ip_prop" min="0" value="0"></div>
+        <div class="wa-input-row"><label>📞 Lead. Cumpărători</label><input type="number" class="wa-input" id="ip_cumpar" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🏠 Prosp. stabilite</label><input type="number" class="wa-input" id="ip_prosp_stab" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🏠 Prosp. de stabilit</label><input type="number" class="wa-input" id="ip_prosp_dest" min="0" value="0"></div>
+        <div class="wa-input-row"><label>👀 Viz. stabilite</label><input type="number" class="wa-input" id="ip_vizi_stab2" min="0" value="0"></div>
+        <div class="wa-input-row"><label>👀 Viz. de stabilit 2</label><input type="number" class="wa-input" id="ip_vizi_dest" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🔄 F-up Cumpărători</label><input type="number" class="wa-input" id="ip_fu_cumpar" min="0" value="0"></div>
+      </div>
+    </div>
+
+    <!-- EXEC FIELDS -->
+    <div id="imp_form_exec" style="display:none;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="wa-input-row"><label>🔥 Hot din portofoliu</label><input type="number" class="wa-input" id="ie_hot_port" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🔥 Hot noi identificați</label><input type="number" class="wa-input" id="ie_hot_noi" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🔴 Avansați</label><input type="number" class="wa-input" id="ie_avansat" min="0" value="0"></div>
+        <div class="wa-input-row"><label>👀 Viz. stabilite</label><input type="number" class="wa-input" id="ie_viz_stab" min="0" value="0"></div>
+        <div class="wa-input-row"><label>👀 Viz. efectuate</label><input type="number" class="wa-input" id="ie_viz_ef" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🟰 Finanțare</label><input type="number" class="wa-input" id="ie_fin" min="0" value="0"></div>
+        <div class="wa-input-row"><label>💰 Oferte de preț</label><input type="number" class="wa-input" id="ie_oferte_pret" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🤝 Negocieri</label><input type="number" class="wa-input" id="ie_negocieri" min="0" value="0"></div>
+        <div class="wa-input-row"><label>📞 Proprietari</label><input type="number" class="wa-input" id="ie_prop" min="0" value="0"></div>
+        <div class="wa-input-row"><label>📞 Cumpărători</label><input type="number" class="wa-input" id="ie_cumpar" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🏠 Prosp. realizate</label><input type="number" class="wa-input" id="ie_prosp_real" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🏠 Prosp. stabilite</label><input type="number" class="wa-input" id="ie_prosp_stab" min="0" value="0"></div>
+        <div class="wa-input-row"><label>👀 Viz. realizate</label><input type="number" class="wa-input" id="ie_viz_real" min="0" value="0"></div>
+        <div class="wa-input-row"><label>👀 Viz. stabilite 2</label><input type="number" class="wa-input" id="ie_viz_stab2" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🔄 F-up realizat</label><input type="number" class="wa-input" id="ie_fu_real" min="0" value="0"></div>
+      </div>
+    </div>
+
+    <div class="modal-btns" style="margin-top:16px;">
+      <button class="btn-cancel" onclick="closeImportModal()">Închide</button>
+      <button class="btn-cancel" onclick="resetImportForm()" style="border-color:#f59e0b;color:#f59e0b;">🔄 Resetează</button>
+      <button class="btn-send-wa" style="background:var(--accent);" onclick="saveImportReport()">💾 Salvează în Firebase</button>
     </div>
   </div>
 </div>
