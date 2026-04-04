@@ -681,8 +681,11 @@
         <div class="sub-hdr"><span class="sub-hdr-lbl">🔥 Clienți Hot</span></div>
         ${rRow('Contactați',tEH,tPH)}
         <div class="sub-hdr" style="margin-top:6px;"><span class="sub-hdr-lbl">🔴 Avansați</span></div>
-        ${rRow('👀 Vizionări efectuate',tEVr,tPVe)}
-        ${rRow('👀 Vizionări stabilite',s(execs,'viz_stab2'),s(plans,'viz_stab'))}
+        ${rRow('👀 Viz. efectuate (hot)',s(execs,'viz_ef'),s(plans,'viz_ef'))}
+        ${rRow('👀 Viz. stabilite (hot)',s(execs,'viz_stab'),s(plans,'viz_stab'))}
+        <div class="sub-hdr" style="margin-top:6px;"><span class="sub-hdr-lbl">📋 New Business</span></div>
+        ${rRow('👀 Viz. realizate total',s(execs,'viz_ef')+s(execs,'viz_real'),tPVe)}
+        ${rRow('👀 Viz. stabilite total',s(execs,'viz_stab')+s(execs,'viz_stab2'),tPVs)}
         <div class="report-row"><span class="rr-label">💰 Oferte de preț</span><span class="rr-exec">${tOp}</span></div>
         <div class="report-row"><span class="rr-label">🤝 Negocieri</span><span class="rr-exec">${tNeg}</span></div>
 
@@ -816,11 +819,23 @@
 
     waText += `\n🔥 CLIENȚI HOT\nPlanificat: ${tPH}\nContactați: ${tEH}\n${arrow(p(tEH,tPH))} Execuție: ${p(tEH,tPH)}%\n`;
 
+    // AVANSATI - doar hot
+    const tEVr_hot=sum(execs,'viz_ef');   // viz efectuate hot
+    const tEVs_hot=sum(execs,'viz_stab'); // viz stabilite hot
+    // NEW BUSINESS - total (hot + NB)
+    const tEVr_total=sum(execs,'viz_ef')+sum(execs,'viz_real');     // viz realizate total
+    const tEVs_total=sum(execs,'viz_stab')+sum(execs,'viz_stab2');  // viz stabilite total
+    const tPVe_hot=sum(plans,'viz_ef');   // plan viz de efectuat hot
+    const tPVs_hot=sum(plans,'viz_stab'); // plan viz de stabilit hot
+
     waText += `\n🔴 AVANSAȚI\n`;
-    waText += `👀 Vizionări efectuate: ${tEVr} / ${tPVe}\n${arrow(p(tEVr,tPVe))} ${p(tEVr,tPVe)}%\n`;
-    waText += `👀 Vizionări stabilite: ${tEVs} / ${tPVe}\n${arrow(p(tEVs,tPVe))} ${p(tEVs,tPVe)}%\n`;
+    waText += `👀 Viz. efectuate (hot): ${tEVr_hot} / ${tPVe_hot}\n${arrow(p(tEVr_hot,tPVe_hot))} ${p(tEVr_hot,tPVe_hot)}%\n`;
+    waText += `👀 Viz. stabilite (hot): ${tEVs_hot} / ${tPVs_hot}\n${arrow(p(tEVs_hot,tPVs_hot))} ${p(tEVs_hot,tPVs_hot)}%\n`;
     waText += `💰 Oferte de preț: ${tOp}\n`;
     waText += `🤝 Negocieri: ${tNeg}\n`;
+    waText += `\n📋 NEW BUSINESS\n`;
+    waText += `👀 Viz. realizate total: ${tEVr_total} / ${tPVe}\n${arrow(p(tEVr_total,tPVe))} ${p(tEVr_total,tPVe)}%\n`;
+    waText += `👀 Viz. stabilite total: ${tEVs_total} / ${tPVs}\n${arrow(p(tEVs_total,tPVs))} ${p(tEVs_total,tPVs)}%\n`;
 
     waText += `\n📞 CONTACTE EFECTUATE\nPlanificat total: ${tPC}\nRealizat: ${tEC}\n${arrow(p(tEC,tPC))} Execuție: ${p(tEC,tPC)}%\n`;
 
@@ -1061,8 +1076,8 @@
       const convViz   = be.reduce((s,r)=>s+(r.cumpar||0),0);
       const intrPlan  = be.reduce((s,r)=>s+(r.prosp_stab||0),0);
       const intrReal  = be.reduce((s,r)=>s+(r.prosp_real||0),0);
-      const vizPlan   = be.reduce((s,r)=>s+(r.viz_stab||0)+(r.viz_stab2||0),0);
-      const vizReal   = be.reduce((s,r)=>s+(r.viz_ef||0)+(r.viz_real||0),0);
+      const vizPlan   = be.reduce((s,r)=>s+(r.viz_stab||0)+(r.viz_stab2||0),0); // total stabilite
+      const vizReal   = be.reduce((s,r)=>s+(r.viz_ef||0)+(r.viz_real||0),0);    // total realizate
       const neg       = be.reduce((s,r)=>s+(r.negocieri||0),0);
 
       // Add to team totals
