@@ -1163,12 +1163,12 @@
       // Apply proration for weekly standard
       const stdVal = (v) => Math.round(v * stdMultiplier);
       const rows = [
-        ['📞 Conv. tel. prospectare', convProsp, stdVal(std[0])],
-        ['📞 Conv. tel. vizionare', convViz, stdVal(std[4])],
-        ['🏠 Int. plan. prosp.', intrPlan, stdVal(std[1])],
-        ['✅ Contracte prosp.', intrReal, stdVal(std[2])],
-        ['👀 Int. plan. viz.', vizReal, stdVal(std[5])],
-        ['✅ Contracte viz.', vizReal, stdVal(std[6])],
+        ['📞 Conv. tel. proprietari', convProsp, stdVal(std[0])],
+        ['📞 Conv. tel. cumpărători', convViz, stdVal(std[4])],
+        ['🏠 Întâlniri proprietari plan.', intrPlan, stdVal(std[1])],
+        ['✅ Contracte proprietari', intrReal, stdVal(std[2])],
+        ['👀 Întâlniri cumpărători plan.', vizReal, stdVal(std[5])],
+        ['✅ Contracte cumpărători', vizReal, stdVal(std[6])],
         ['🤝 Negocieri', neg, stdVal(std[8]||0)],
       ];
 
@@ -1201,12 +1201,12 @@
 
     // Team summary HTML
     const teamRows = [
-      ['📞 Conv. tel. prospectare', teamConvProsp, teamStdConvProsp],
-      ['📞 Conv. tel. vizionare', teamConvViz, teamStdConvViz],
-      ['🏠 Int. plan. prosp.', teamIntrPlan, teamStdIntrPlan],
-      ['✅ Contracte prosp.', teamIntrReal, teamStdIntrReal],
-      ['👀 Int. plan. viz.', teamVizReal, teamStdVizPlan],
-      ['✅ Contracte viz.', teamVizReal, teamStdVizReal],
+      ['📞 Conv. tel. proprietari', teamConvProsp, teamStdConvProsp],
+      ['📞 Conv. tel. cumpărători', teamConvViz, teamStdConvViz],
+      ['🏠 Întâlniri proprietari plan.', teamIntrPlan, teamStdIntrPlan],
+      ['✅ Contracte proprietari', teamIntrReal, teamStdIntrReal],
+      ['👀 Întâlniri cumpărători plan.', teamVizReal, teamStdVizPlan],
+      ['✅ Contracte cumpărători', teamVizReal, teamStdVizReal],
       ['🤝 Negocieri', teamNeg, teamStdNeg],
     ];
 
