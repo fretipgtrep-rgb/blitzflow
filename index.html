@@ -348,6 +348,9 @@
       <button class="btn-wa" onclick="openWaModal('echipa','saptamanal')">📲 Săptămânal</button>
       <button class="btn-wa" onclick="openWaModal('echipa','lunar')">📲 Lunar</button>
       <button class="btn-wa" onclick="openWaModal('echipa','anual')">📲 Anual</button>
+      <button class="btn-wa" onclick="openBrokeriModal('zilnic')" style="background:#0d6e3f;">🏠 Brokeri Azi</button>
+      <button class="btn-wa" onclick="openBrokeriModal('saptamanal')" style="background:#0d6e3f;">🏠 Brokeri S</button>
+      <button class="btn-wa" onclick="openBrokeriModal('lunar')" style="background:#0d6e3f;">🏠 Brokeri L</button>
       <button class="btn-action" onclick="openBrokerModal()">👥 Echipă</button>
       <button class="btn-action" onclick="openStandardModal()" style="border-color:#60a5fa;color:#60a5fa;">📊 Standard</button>
       <button class="btn-danger" onclick="clearToday()">🗑 Azi</button>
@@ -834,11 +837,9 @@
     waText += `👀 Viz. stabilite (hot): ${tEVs_hot} / ${tPVs_hot}\n${arrow(p(tEVs_hot,tPVs_hot))} ${p(tEVs_hot,tPVs_hot)}%\n`;
     waText += `💰 Oferte de preț: ${tOp}\n`;
     waText += `🤝 Negocieri: ${tNeg}\n`;
-    waText += `\n📋 NEW BUSINESS\n`;
-    waText += `👀 Viz. realizate total: ${tEVr_total} / ${tPVe}\n${arrow(p(tEVr_total,tPVe))} ${p(tEVr_total,tPVe)}%\n`;
-    waText += `👀 Viz. stabilite total: ${tEVs_total} / ${tPVs}\n${arrow(p(tEVs_total,tPVs))} ${p(tEVs_total,tPVs)}%\n`;
 
     waText += `\n📞 CONTACTE EFECTUATE\nPlanificat total: ${tPC}\nRealizat: ${tEC}\n${arrow(p(tEC,tPC))} Execuție: ${p(tEC,tPC)}%\n`;
+    waText += `\n👀 VIZIONĂRI\nRealizate: ${tEVr_total} / ${tPVe}\n${arrow(p(tEVr_total,tPVe))} ${p(tEVr_total,tPVe)}%\nStabilite: ${tEVs_total} / ${tPVs}\n${arrow(p(tEVs_total,tPVs))} ${p(tEVs_total,tPVs)}%\n`;
 
     const tPPstab=sum(plans,'prosp_stab');                          // deja stabilite dimineata
     const tPPdest=sum(plans,'oferte_prosp')+sum(plans,'prosp_dest'); // de stabilit azi
@@ -862,7 +863,7 @@
     } else {
       // Daily: show who hasn't reported
       const missing=getBrokerNames().filter(b=>!execs.find(r=>r.name===b));
-      if(missing.length>0) waText+=`\n${' ─'.repeat(16)}\n⚠️ NU AU RAPORTAT EXECUȚIA:\n${missing.map(m=>'• '+m).join('\n')}\n`;
+      if(missing.length>0) waText+=`\n${'─'.repeat(32)}\n⚠️ NU AU RAPORTAT EXECUȚIA:\n${missing.map(m=>'• '+m).join('\n')}\n`;
     }
 
     waText += `\n${'─'.repeat(32)}\n📱 BlitzFlow | Blitz Imobiliare`;
@@ -1459,6 +1460,79 @@
       showToast('❌ Eroare la salvare!','#ef4444');
       console.error(e);
     }
+  };
+
+
+  // ── RAPORT PROSP & VIZ PE BROKERI ────────────────────────
+  window.openBrokeriModal = async function(period) {
+    const WA_GROUP = 'https://chat.whatsapp.com/D6POd1Gr2BsBTKrvnfRmOa';
+    showLoading('Se generează raportul brokeri...');
+
+    const now = new Date();
+    let reports = [];
+    let periodLabel = '';
+
+    if(period === 'zilnic') {
+      reports = window._lastReports || [];
+      periodLabel = todayStr();
+    } else {
+      const snapshot = await window.dbGet(window.dbRef(window.DB, 'reports'));
+      const allData = snapshot.val() || {};
+      let startDate, endDate;
+      if(period === 'saptamanal') {
+        const dow = now.getDay() || 7;
+        startDate = new Date(now); startDate.setDate(now.getDate()-dow+1); startDate.setHours(0,0,0,0);
+        endDate = new Date(now); endDate.setHours(23,59,59,0);
+        periodLabel = `${startDate.toLocaleDateString('ro-RO')} – ${endDate.toLocaleDateString('ro-RO')}`;
+      } else if(period === 'lunar') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth()+1, 0, 23,59,59);
+        periodLabel = now.toLocaleDateString('ro-RO', {month:'long', year:'numeric'});
+      } else if(period === 'anual') {
+        startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getFullYear(), 11, 31, 23,59,59);
+        periodLabel = `Anul ${now.getFullYear()}`;
+      }
+      Object.keys(allData).forEach(dateKey => {
+        const parts = dateKey.split('-');
+        if(parts.length!==3) return;
+        const d = new Date(+parts[2], +parts[1]-1, +parts[0]);
+        const dw = d.getDay();
+        if(dw===0||dw===6) return;
+        if(d>=startDate && d<=endDate) {
+          Object.values(allData[dateKey]).forEach(r=>reports.push(r));
+        }
+      });
+    }
+
+    hideLoading();
+
+    const execs = reports.filter(r=>r.type==='exec');
+    const periodEmoji = period==='zilnic'?'📅':period==='saptamanal'?'📊':period==='lunar'?'🗓️':'📆';
+    const periodTitle = period==='zilnic'?'ZILNIC':period==='saptamanal'?'SĂPTĂMÂNAL':period==='lunar'?'LUNAR':'ANUAL';
+
+    let waText = `📈 PROSPECTĂRI & VIZIONĂRI – PE BROKERI (${periodLabel})\n${'─'.repeat(32)}\n`;
+
+    getBrokerNames().forEach(name => {
+      const be = execs.filter(r=>r.name===name);
+      const prosp_real = be.reduce((s,r)=>s+(r.prosp_real||0),0);
+      const prosp_stab = be.reduce((s,r)=>s+(r.prosp_stab||0),0);
+      const viz_real   = be.reduce((s,r)=>s+(r.viz_ef||0)+(r.viz_real||0),0);
+      const viz_stab   = be.reduce((s,r)=>s+(r.viz_stab||0)+(r.viz_stab2||0),0);
+      waText += `\n💠 ${name}\n`;
+      waText += `🏠 Prospectări: ${prosp_real} realizate / ${prosp_stab} stabilite\n`;
+      waText += `👀 Vizionări: ${viz_real} realizate / ${viz_stab} stabilite\n`;
+    });
+
+    waText += `\n${'─'.repeat(32)}\n📱 BlitzFlow | Blitz Imobiliare`;
+
+    // Copy to clipboard and open WA group
+    if(navigator.clipboard) {
+      navigator.clipboard.writeText(waText).then(()=>{
+        showToast('📋 Mesaj copiat! Lipește-l în grup.','#25D366');
+      });
+    }
+    setTimeout(()=>window.open(WA_GROUP,'_blank'), 600);
   };
 
   // ── INIT ────────────────────────────────────────────────
