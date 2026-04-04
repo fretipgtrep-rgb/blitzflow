@@ -859,21 +859,8 @@
 
     waText += `\n🔄 FOLLOW-UP CUMPĂRĂTORI\nRealizat: ${tEF} / ${tPF}\n${arrow(p(tEF,tPF))} ${p(tEF,tPF)}%\n`;
 
-    // Per broker section for weekly/monthly
-    if(period !== 'zilnic') {
-      waText += `\n${'─'.repeat(32)}\n📈 PROSPECTĂRI & VIZIONĂRI – PE BROKERI\n`;
-      getBrokerNames().forEach(name => {
-        const be=execs.filter(r=>r.name===name);
-        const prosp_real=be.reduce((s,r)=>s+(r.prosp_real||0),0);
-        const prosp_stab=be.reduce((s,r)=>s+(r.prosp_stab||0),0);
-        const viz_real=be.reduce((s,r)=>s+(r.viz_real||0),0);
-        const viz_stab=be.reduce((s,r)=>s+(r.viz_stab2||0),0);
-        waText += `\n💠 ${name}\n`;
-        waText += `🏠 Prospectări: ${prosp_real} realizate / ${prosp_stab} stabilite\n`;
-        waText += `👀 Vizionări: ${viz_real} realizate / ${viz_stab} stabilite\n`;
-      });
-    } else {
-      // Daily: show who hasn't reported
+    // Daily: show who hasn't reported
+    if(period === 'zilnic') {
       const missing=getBrokerNames().filter(b=>!execs.find(r=>r.name===b));
       if(missing.length>0) waText+=`\n${'─'.repeat(32)}\n⚠️ NU AU RAPORTAT EXECUȚIA:\n${missing.map(m=>'• '+m).join('\n')}\n`;
     }
