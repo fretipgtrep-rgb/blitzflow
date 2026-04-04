@@ -360,6 +360,7 @@
       <button class="btn-wa" onclick="openBrokeriModal('lunar')" style="background:#0d6e3f;">🏠 Brokeri L</button>
       <button class="btn-action" onclick="openBrokerModal()">👥 Echipă</button>
       <button class="btn-action" onclick="openStandardModal()" style="border-color:#60a5fa;color:#60a5fa;">📊 Standard</button>
+      <button class="btn-secondary" onclick="openSettings()">⚙️</button>
       <button class="btn-danger" onclick="clearToday()">🗑 Azi</button>
       <button class="btn-action" onclick="openImportModal()" style="border-color:#60a5fa;color:#60a5fa;">📥 Import</button>
     </div>
@@ -500,6 +501,7 @@
       document.getElementById('lockScreen').style.display = 'none';
       showPage('manager', pendingTab);
       initManagerNotifications();
+      loadGeminiKeyFromFirebase(); // sync key across devices
     } else {
       document.getElementById('lockError').style.display = 'block';
       document.getElementById('lockInput').value = '';
@@ -921,10 +923,14 @@
     if(gsInput) { try{localStorage.setItem('bf_gs_url', gsInput.value.trim());}catch(e){} }
     const geminiInput = document.getElementById('geminiKeyInput');
     if(geminiInput && geminiInput.value && !geminiInput.value.startsWith('•')) {
-      try{localStorage.setItem('bf_gemini_key', geminiInput.value.trim());}catch(e){}
+      const key = geminiInput.value.trim();
+      saveGeminiKeyToFirebase(key).then(saved => {
+        showToast(saved ? '✅ Setări salvate pe toate dispozitivele!' : '✅ Salvat local!');
+      });
+    } else {
+      showToast('✅ Setări salvate!');
     }
     closeSettings();
-    showToast('✅ Setări salvate!');
   }
   async function sendToGoogleSheets(report){
     const url=getGsUrl();
@@ -1739,8 +1745,28 @@ Răspunde în română, concis. Format:
   };
 
   // ── GEMINI AI ─────────────────────────────────────────────
-  // Gemini key stored in localStorage only - never in code
+  // Gemini key stored in Firebase + cached in localStorage
   function getGeminiKey() { try { return localStorage.getItem('bf_gemini_key')||''; } catch(e) { return ''; } }
+  async function loadGeminiKeyFromFirebase() {
+    try {
+      const snap = await window.dbGet(window.dbRef(window.DB, 'config/gemini_key'));
+      if(snap.val()) {
+        localStorage.setItem('bf_gemini_key', snap.val());
+        return snap.val();
+      }
+    } catch(e) {}
+    return getGeminiKey();
+  }
+  async function saveGeminiKeyToFirebase(key) {
+    try {
+      await window.dbSet(window.dbRef(window.DB, 'config/gemini_key'), key);
+      localStorage.setItem('bf_gemini_key', key);
+      return true;
+    } catch(e) {
+      localStorage.setItem('bf_gemini_key', key);
+      return false;
+    }
+  }
 
   window.generateGeminiConclusion = async function() {
     const btn = document.getElementById('geminiBtn');
