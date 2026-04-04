@@ -69,11 +69,11 @@
   .card-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
   .card-icon{font-size:1.1rem;}
   .card-title{font-family:'Syne',sans-serif;font-size:0.8rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);}
-  .field-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
+  .field-row{display:flex;min-height:48px;align-items:center;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
   .field-row:last-child{border-bottom:none;padding-bottom:0;}
   .field-label{font-size:0.85rem;color:var(--text);}
   .field-label .sub{color:var(--muted);font-size:0.75rem;margin-left:5px;}
-  .field-input{width:72px;text-align:center;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);padding:6px 8px;border-radius:8px;font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;outline:none;transition:border-color 0.2s;}
+  .field-input{width:80px;text-align:center;font-size:1.1rem;min-height:44px;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);padding:6px 8px;border-radius:8px;font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;outline:none;transition:border-color 0.2s;}
   .field-input:focus{border-color:var(--accent);}
   .field-input:disabled{opacity:0.4;cursor:not-allowed;}
 
@@ -275,34 +275,34 @@
   <div id="form-plan" style="display:none;">
     <div class="card">
       <div class="card-header"><span class="card-icon">🔥</span><span class="card-title">Clienți Hot</span></div>
-      <div class="field-row"><span class="field-label">În lucru</span><input type="number" class="field-input" id="p_hot" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">În lucru</span><input type="number" class="field-input" id="p_hot" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="1" style="font-size:1.1rem;"></div>
     </div>
     <div class="card">
       <div class="card-header"><span class="card-icon">🎯</span><span class="card-title">Acțiuni Strategice</span></div>
-      <div class="field-row"><span class="field-label">🔍 Oferte de prospectat</span><input type="number" class="field-input" id="p_oferte_prosp" min="0" value="0"></div>
-      <div class="field-row"><span class="field-label">👀 Vizionări <span class="sub">de stabilit</span></span><input type="number" class="field-input" id="p_viz_stab" min="0" value="0"></div>
-      <div class="field-row"><span class="field-label">👀 Vizionări <span class="sub">de efectuat</span></span><input type="number" class="field-input" id="p_viz_ef" min="0" value="0"></div>
-      <div class="field-row"><span class="field-label">🟰 Finanțare de facilitat</span><input type="number" class="field-input" id="p_fin" min="0" value="0"></div>
-      <div class="field-row"><span class="field-label">🔧 Follow-up</span><input type="number" class="field-input" id="p_followup" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">🔍 Oferte de prospectat</span><input type="number" class="field-input" id="p_oferte_prosp" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="2" style="font-size:1.1rem;"></div>
+      <div class="field-row"><span class="field-label">👀 Vizionări <span class="sub">de stabilit</span></span><input type="number" class="field-input" id="p_viz_stab" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="3" style="font-size:1.1rem;"></div>
+      <div class="field-row"><span class="field-label">👀 Vizionări <span class="sub">de efectuat</span></span><input type="number" class="field-input" id="p_viz_ef" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="4" style="font-size:1.1rem;"></div>
+      <div class="field-row"><span class="field-label">🟰 Finanțare de facilitat</span><input type="number" class="field-input" id="p_fin" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="5" style="font-size:1.1rem;"></div>
+      <div class="field-row"><span class="field-label">🔧 Follow-up</span><input type="number" class="field-input" id="p_followup" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="6" style="font-size:1.1rem;"></div>
     </div>
     <div class="card">
       <div class="card-header"><span class="card-icon">📞</span><span class="card-title">Leaduri de Apelat</span></div>
-      <div class="field-row"><span class="field-label">Proprietari</span><input type="number" class="field-input" id="p_prop" min="0" value="0"></div>
-      <div class="field-row"><span class="field-label">Cumpărători</span><input type="number" class="field-input" id="p_cumpar" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">Proprietari</span><input type="number" class="field-input" id="p_prop" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="7" style="font-size:1.1rem;"></div>
+      <div class="field-row"><span class="field-label">Cumpărători</span><input type="number" class="field-input" id="p_cumpar" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="8" style="font-size:1.1rem;"></div>
     </div>
     <div class="card">
       <div class="card-header"><span class="card-icon">🏠</span><span class="card-title">Prospectări</span></div>
-      <div class="field-row"><span class="field-label">Stabilite</span><input type="number" class="field-input" id="p_prosp_stab" min="0" value="0"></div>
-      <div class="field-row"><span class="field-label">De stabilit</span><input type="number" class="field-input" id="p_prosp_dest" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">Stabilite</span><input type="number" class="field-input" id="p_prosp_stab" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="9" style="font-size:1.1rem;"></div>
+      <div class="field-row"><span class="field-label">De stabilit</span><input type="number" class="field-input" id="p_prosp_dest" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="10" style="font-size:1.1rem;"></div>
     </div>
     <div class="card">
       <div class="card-header"><span class="card-icon">👀</span><span class="card-title">Vizionări</span></div>
-      <div class="field-row"><span class="field-label">Stabilite</span><input type="number" class="field-input" id="p_vizi_stab2" min="0" value="0"></div>
-      <div class="field-row"><span class="field-label">De stabilit</span><input type="number" class="field-input" id="p_vizi_dest" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">Stabilite</span><input type="number" class="field-input" id="p_vizi_stab2" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="11" style="font-size:1.1rem;"></div>
+      <div class="field-row"><span class="field-label">De stabilit</span><input type="number" class="field-input" id="p_vizi_dest" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="12" style="font-size:1.1rem;"></div>
     </div>
     <div class="card">
       <div class="card-header"><span class="card-icon">🔄</span><span class="card-title">Follow-up Cumpărători</span></div>
-      <div class="field-row"><span class="field-label">De efectuat</span><input type="number" class="field-input" id="p_fu_cumpar" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">De efectuat</span><input type="number" class="field-input" id="p_fu_cumpar" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="13" style="font-size:1.1rem;"></div>
     </div>
     <button class="btn-submit" id="btnSubmitPlan" onclick="submitReport('plan')">✅ Trimite Planificarea</button>
   </div>
@@ -310,34 +310,34 @@
   <div id="form-exec" style="display:none;">
     <div class="card">
       <div class="card-header"><span class="card-icon">🔥</span><span class="card-title">Clienți Hot</span></div>
-      <div class="field-row"><span class="field-label">Contactați <span class="sub">din portofoliu</span></span><input type="number" class="field-input" id="e_hot_port" min="0" value="0"></div>
-      <div class="field-row"><span class="field-label">Contactați <span class="sub">noi identificați</span></span><input type="number" class="field-input" id="e_hot_noi" min="0" value="0"></div>
-      <div class="field-row"><span class="field-label">🔴 Avansați</span><input type="number" class="field-input" id="e_avansat" min="0" value="0"></div>
-      <div class="field-row"><span class="field-label">👀 Vizionări <span class="sub">stabilite</span></span><input type="number" class="field-input" id="e_viz_stab" min="0" value="0"></div>
-      <div class="field-row"><span class="field-label">👀 Vizionări <span class="sub">efectuate</span></span><input type="number" class="field-input" id="e_viz_ef" min="0" value="0"></div>
-      <div class="field-row"><span class="field-label">🟰 Finanțare</span><input type="number" class="field-input" id="e_fin" min="0" value="0"></div>
-      <div class="field-row"><span class="field-label">💰 Oferte de preț</span><input type="number" class="field-input" id="e_oferte_pret" min="0" value="0"></div>
-      <div class="field-row"><span class="field-label">🤝 Negocieri</span><input type="number" class="field-input" id="e_negocieri" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">Contactați <span class="sub">din portofoliu</span></span><input type="number" class="field-input" id="e_hot_port" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="14" style="font-size:1.1rem;"></div>
+      <div class="field-row"><span class="field-label">Contactați <span class="sub">noi identificați</span></span><input type="number" class="field-input" id="e_hot_noi" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="15" style="font-size:1.1rem;"></div>
+      <div style="padding:6px 0 2px 0;font-weight:700;font-size:0.82rem;color:#f87171;letter-spacing:0.05em;">🔴 AVANSAȚI</div>
+      <div class="field-row"><span class="field-label">👀 Vizionări <span class="sub">stabilite</span></span><input type="number" class="field-input" id="e_viz_stab" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="16" style="font-size:1.1rem;"></div>
+      <div class="field-row"><span class="field-label">👀 Vizionări <span class="sub">efectuate</span></span><input type="number" class="field-input" id="e_viz_ef" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="17" style="font-size:1.1rem;"></div>
+      <div class="field-row"><span class="field-label">🟰 Finanțare</span><input type="number" class="field-input" id="e_fin" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="18" style="font-size:1.1rem;"></div>
+      <div class="field-row"><span class="field-label">💰 Oferte de preț</span><input type="number" class="field-input" id="e_oferte_pret" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="19" style="font-size:1.1rem;"></div>
+      <div class="field-row"><span class="field-label">🤝 Negocieri</span><input type="number" class="field-input" id="e_negocieri" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="20" style="font-size:1.1rem;"></div>
     </div>
 
     <div class="card">
       <div class="card-header"><span class="card-icon">📞</span><span class="card-title">Contacte Efectuate</span></div>
-      <div class="field-row"><span class="field-label">Proprietari</span><input type="number" class="field-input" id="e_prop" min="0" value="0"></div>
-      <div class="field-row"><span class="field-label">Cumpărători</span><input type="number" class="field-input" id="e_cumpar" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">Proprietari</span><input type="number" class="field-input" id="e_prop" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="21" style="font-size:1.1rem;"></div>
+      <div class="field-row"><span class="field-label">Cumpărători</span><input type="number" class="field-input" id="e_cumpar" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="22" style="font-size:1.1rem;"></div>
     </div>
     <div class="card">
       <div class="card-header"><span class="card-icon">🏠</span><span class="card-title">Prospectări</span></div>
-      <div class="field-row"><span class="field-label">Realizate</span><input type="number" class="field-input" id="e_prosp_real" min="0" value="0"></div>
-      <div class="field-row"><span class="field-label">Stabilite</span><input type="number" class="field-input" id="e_prosp_stab" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">Realizate</span><input type="number" class="field-input" id="e_prosp_real" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="23" style="font-size:1.1rem;"></div>
+      <div class="field-row"><span class="field-label">Stabilite</span><input type="number" class="field-input" id="e_prosp_stab" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="24" style="font-size:1.1rem;"></div>
     </div>
     <div class="card">
       <div class="card-header"><span class="card-icon">👀</span><span class="card-title">Vizionări</span></div>
-      <div class="field-row"><span class="field-label">Realizate</span><input type="number" class="field-input" id="e_viz_real" min="0" value="0"></div>
-      <div class="field-row"><span class="field-label">Stabilite</span><input type="number" class="field-input" id="e_viz_stab2" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">Realizate</span><input type="number" class="field-input" id="e_viz_real" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="25" style="font-size:1.1rem;"></div>
+      <div class="field-row"><span class="field-label">Stabilite</span><input type="number" class="field-input" id="e_viz_stab2" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="26" style="font-size:1.1rem;"></div>
     </div>
     <div class="card">
       <div class="card-header"><span class="card-icon">🔄</span><span class="card-title">Follow-up Cumpărători</span></div>
-      <div class="field-row"><span class="field-label">Realizat</span><input type="number" class="field-input" id="e_fu_real" min="0" value="0"></div>
+      <div class="field-row"><span class="field-label">Realizat</span><input type="number" class="field-input" id="e_fu_real" min="0" value="0" inputmode="numeric" pattern="[0-9]*" tabindex="27" style="font-size:1.1rem;"></div>
     </div>
     <button class="btn-submit" id="btnSubmitExec" onclick="submitReport('exec')">✅ Trimite Execuția</button>
   </div>
