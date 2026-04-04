@@ -216,6 +216,13 @@
     </div>
     <div style="font-size:0.75rem;color:var(--muted);margin-bottom:5px;font-weight:600;">Previzualizare:</div>
     <div class="wa-preview" id="waPreview"></div>
+    <div id="geminiWaSection" style="margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:0.75rem;color:var(--muted);font-weight:600;">🤖 Concluzie AI</span>
+        <button onclick="generateGeminiWa()" id="geminiWaBtn" style="padding:6px 12px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:8px;font-size:0.75rem;font-weight:700;cursor:pointer;">✨ Generează cu Gemini</button>
+      </div>
+      <div id="geminiWaResult" style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);border-radius:10px;padding:10px 14px;font-size:0.78rem;color:#a5b4fc;min-height:40px;white-space:pre-wrap;display:none;"></div>
+    </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="document.getElementById('waModal').style.display='none'">Anulează</button>
       <button class="btn-send-wa" onclick="sendToWhatsApp()">📲 Deschide WhatsApp</button>
@@ -871,6 +878,11 @@
 
     waText += `\n${'─'.repeat(32)}\n📱 BlitzReport | Blitz Imobiliare`;
 
+    // Reset Gemini WA
+    const gWaR = document.getElementById('geminiWaResult');
+    if(gWaR) { gWaR.style.display='none'; gWaR.textContent=''; }
+    const gWaB = document.getElementById('geminiWaBtn');
+    if(gWaB) { gWaB.textContent='✨ Generează cu Gemini'; gWaB.disabled=false; }
     document.getElementById('waPreview').textContent = waText;
     document.getElementById('waModalSub').textContent = `${periodEmoji} Raport ${periodTitle} — ${periodLabel}`;
     document.getElementById('waPhoneRow').style.display = 'none';
@@ -1589,8 +1601,112 @@
   };
 
 
+
+  // ── GEMINI pentru raport echipă (WA modal) ────────────────
+  window.generateGeminiWa = async function() {
+    const btn = document.getElementById('geminiWaBtn');
+    const result = document.getElementById('geminiWaResult');
+    const reportText = waText || '';
+    if(!reportText) { showToast('Generează mai întâi raportul!', '#f59e0b'); return; }
+
+    btn.textContent = '⏳ Se generează...';
+    btn.disabled = true;
+    result.style.display = 'block';
+    result.textContent = 'Se analizează raportul...';
+
+    const prompt = `Ești un manager experimentat în imobiliare. Analizează raportul de activitate al echipei și oferă o concluzie scurtă și sfaturi concrete.
+
+Raport:
+${reportText}
+
+Răspunde în română, concis. Format:
+📊 CONCLUZIE: [2-3 propoziții despre performanța echipei]
+💡 SFATURI:
+• [sfat concret 1]
+• [sfat concret 2]
+• [sfat concret 3]`;
+
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+        { method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.7,maxOutputTokens:400}}) }
+      );
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if(text) {
+        result.textContent = text;
+        result.style.color = '#a5b4fc';
+        waText = waText + '\n\n' + text;
+        // Reset Gemini WA
+    const gWaR = document.getElementById('geminiWaResult');
+    if(gWaR) { gWaR.style.display='none'; gWaR.textContent=''; }
+    const gWaB = document.getElementById('geminiWaBtn');
+    if(gWaB) { gWaB.textContent='✨ Generează cu Gemini'; gWaB.disabled=false; }
+    document.getElementById('waPreview').textContent = waText;
+        showToast('✅ Concluzie generată!', '#4f46e5');
+      } else {
+        result.textContent = 'Eroare: ' + JSON.stringify(data).substring(0, 100);
+        result.style.color = '#ef4444';
+      }
+    } catch(e) {
+      result.textContent = 'Eroare la conectare: ' + e.message;
+      result.style.color = '#ef4444';
+    }
+    btn.textContent = '✨ Regenerează'; btn.disabled = false;
+  };
+
+  // ── GEMINI pentru raport standard ─────────────────────────
+  window.generateGeminiStd = async function() {
+    const btn = document.getElementById('geminiStdBtn');
+    const result = document.getElementById('geminiStdResult');
+    const reportText = window._waStdText || '';
+    if(!reportText) { showToast('Generează mai întâi raportul!', '#f59e0b'); return; }
+
+    btn.textContent = '⏳ Se generează...';
+    btn.disabled = true;
+    result.style.display = 'block';
+    result.textContent = 'Se analizează raportul vs standard...';
+
+    const prompt = `Ești un manager experimentat în imobiliare. Analizează performanța echipei față de standardele Blitz și oferă o concluzie și recomandări.
+
+Raport vs Standard:
+${reportText}
+
+Răspunde în română, concis. Format:
+📊 CONCLUZIE: [evaluare generală față de standard]
+⭐ PERFORMERI: [brokeri peste standard]
+⚠️ ATENȚIE: [brokeri sub standard și ce trebuie îmbunătățit]
+💡 PLAN ACȚIUNE:
+• [acțiune concretă 1]
+• [acțiune concretă 2]`;
+
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+        { method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.7,maxOutputTokens:400}}) }
+      );
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if(text) {
+        result.textContent = text;
+        result.style.color = '#a5b4fc';
+        window._waStdText = window._waStdText + '\n\n' + text;
+        showToast('✅ Concluzie generată!', '#4f46e5');
+      } else {
+        result.textContent = 'Eroare: ' + JSON.stringify(data).substring(0, 100);
+        result.style.color = '#ef4444';
+      }
+    } catch(e) {
+      result.textContent = 'Eroare la conectare: ' + e.message;
+      result.style.color = '#ef4444';
+    }
+    btn.textContent = '✨ Regenerează'; btn.disabled = false;
+  };
+
   // ── GEMINI AI ─────────────────────────────────────────────
-  const GEMINI_KEY = 'AIzaSyBn3LkPYMSqKvUM7vfCLDRb0euPu6becqM';
+  const GEMINI_KEY = 'AIzaSyCvsyL-mRGUS12nnGe0jxftirNajrTT0jg';
 
   window.generateGeminiConclusion = async function() {
     const btn = document.getElementById('geminiBtn');
@@ -1674,6 +1790,13 @@ Răspunde în română, concis și direct. Folosește emoji-uri relevante. Forma
     </div>
     <div class="modal-sub" id="standardModalSub">Activitate față de standardul fiecărui broker</div>
     <div id="standardContent" style="margin-bottom:16px;"></div>
+    <div id="geminiStdSection" style="margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:0.75rem;color:var(--muted);font-weight:600;">🤖 Concluzie AI</span>
+        <button onclick="generateGeminiStd()" id="geminiStdBtn" style="padding:6px 12px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:8px;font-size:0.75rem;font-weight:700;cursor:pointer;">✨ Generează cu Gemini</button>
+      </div>
+      <div id="geminiStdResult" style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);border-radius:10px;padding:10px 14px;font-size:0.78rem;color:#a5b4fc;min-height:40px;white-space:pre-wrap;display:none;"></div>
+    </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="document.getElementById('standardModal').style.display='none'">Închide</button>
       <button class="btn-send-wa" style="background:#1B4D3E;" onclick="sendStandardToWa()">📲 Trimite pe WhatsApp</button>
