@@ -692,7 +692,8 @@
         <div class="sub-hdr" style="margin-top:6px;"><span class="sub-hdr-lbl">📞 Contacte Efectuate</span></div>
         ${rRow('Total contacte',tEC,tPC)}
         <div class="sub-hdr" style="margin-top:6px;"><span class="sub-hdr-lbl">🏠 Prospectări</span></div>
-        ${rRow('Realizate',tEPr,tPP)}
+        ${rRow('Realizate',tEPr,s(plans,'prosp_stab'))}
+        ${rRow('Stabilite',tEPs,s(plans,'oferte_prosp')+s(plans,'prosp_dest'))}
         <div class="sub-hdr" style="margin-top:6px;"><span class="sub-hdr-lbl">🔄 Follow-up Cumpărători</span></div>
         ${rRow('Realizat',tEF,tPF)}
       </div>`;
@@ -839,7 +840,9 @@
 
     waText += `\n📞 CONTACTE EFECTUATE\nPlanificat total: ${tPC}\nRealizat: ${tEC}\n${arrow(p(tEC,tPC))} Execuție: ${p(tEC,tPC)}%\n`;
 
-    waText += `\n🏠 PROSPECTĂRI\nRealizate: ${tEPr} / ${tPPr}\n${arrow(p(tEPr,tPPr))} ${p(tEPr,tPPr)}%\nStabilite: ${tEPs} / ${tPPr}\n${arrow(p(tEPs,tPPr))} ${p(tEPs,tPPr)}%\n`;
+    const tPPstab=sum(plans,'prosp_stab');                          // deja stabilite dimineata
+    const tPPdest=sum(plans,'oferte_prosp')+sum(plans,'prosp_dest'); // de stabilit azi
+    waText += `\n🏠 PROSPECTĂRI\nRealizate: ${tEPr} / ${tPPstab}\n${arrow(p(tEPr,tPPstab))} ${p(tEPr,tPPstab)}%\nStabilite: ${tEPs} / ${tPPdest}\n${arrow(p(tEPs,tPPdest))} ${p(tEPs,tPPdest)}%\n`;
 
     waText += `\n🔄 FOLLOW-UP CUMPĂRĂTORI\nRealizat: ${tEF} / ${tPF}\n${arrow(p(tEF,tPF))} ${p(tEF,tPF)}%\n`;
 
