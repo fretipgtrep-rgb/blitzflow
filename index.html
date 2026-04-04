@@ -910,15 +910,15 @@
 
 
   function getGsUrl(){try{return localStorage.getItem('bf_gs_url')||'';}catch(e){return '';}}
-  function openSettings(){
+  window.openSettings = function(){
     const gsInput = document.getElementById('gsUrl');
     if(gsInput) gsInput.value = getGsUrl();
     const geminiInput = document.getElementById('geminiKeyInput');
     if(geminiInput) geminiInput.value = getGeminiKey() ? '••••••••••••' : '';
     document.getElementById('settingsModal').style.display='flex';
-  }
-  function closeSettings(){ document.getElementById('settingsModal').style.display='none'; }
-  function saveSettings(){
+  };
+  window.closeSettings = function(){ document.getElementById('settingsModal').style.display='none'; };
+  window.saveSettings = function(){
     const gsInput = document.getElementById('gsUrl');
     if(gsInput) { try{localStorage.setItem('bf_gs_url', gsInput.value.trim());}catch(e){} }
     const geminiInput = document.getElementById('geminiKeyInput');
