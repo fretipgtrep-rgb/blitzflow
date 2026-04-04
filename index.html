@@ -1558,6 +1558,97 @@
 
 </script>
 
+<!-- STANDARD MODAL -->
+<div class="modal-overlay" id="standardModal" style="display:none;">
+  <div class="modal-box" style="width:min(680px,96vw);max-height:90vh;">
+    <div class="modal-title">📊 Raport vs Standard</div>
+    <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
+      <button onclick="loadStandard('lunar',this)" class="btn-send-wa" style="background:var(--accent);flex:1;" id="stdBtnLunar">🗓️ Lunar</button>
+      <button onclick="loadStandard('saptamanal',this)" class="btn-secondary" style="flex:1;" id="stdBtnSapt">📊 Săptămânal</button>
+    </div>
+    <div class="modal-sub" id="standardModalSub">Activitate față de standardul fiecărui broker</div>
+    <div id="standardContent" style="margin-bottom:16px;"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="document.getElementById('standardModal').style.display='none'">Închide</button>
+      <button class="btn-send-wa" style="background:#1B4D3E;" onclick="sendStandardToWa()">📲 Trimite pe WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-overlay" id="importModal" style="display:none;">
+  <div class="modal-box" style="width:min(620px,96vw);max-height:92vh;">
+    <div class="modal-title">📥 Import Raport Manual</div>
+    <div class="modal-sub">Introdu datele unui raport trecut direct în Firebase</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+      <div class="wa-input-row" style="margin:0;"><label>Broker</label><select class="wa-input" id="imp_broker" style="padding:8px 10px;"></select></div>
+      <div class="wa-input-row" style="margin:0;"><label>Data</label><input type="date" class="wa-input" id="imp_date" style="padding:8px 10px;"></div>
+      <div class="wa-input-row" style="margin:0;"><label>Tip raport</label><select class="wa-input" id="imp_type" onchange="toggleImportForm()" style="padding:8px 10px;"><option value="plan">🌅 Planificare</option><option value="exec">🌆 Execuție</option></select></div>
+    </div>
+    <div id="imp_form_plan">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="wa-input-row"><label>🔥 Hot în lucru</label><input type="number" class="wa-input" id="ip_hot" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🔍 Oferte prospectat</label><input type="number" class="wa-input" id="ip_oferte_prosp" min="0" value="0"></div>
+        <div class="wa-input-row"><label>👀 Viz. de stabilit</label><input type="number" class="wa-input" id="ip_viz_stab" min="0" value="0"></div>
+        <div class="wa-input-row"><label>👀 Viz. de efectuat</label><input type="number" class="wa-input" id="ip_viz_ef" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🟰 Finanțare</label><input type="number" class="wa-input" id="ip_fin" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🔧 Follow-up</label><input type="number" class="wa-input" id="ip_followup" min="0" value="0"></div>
+        <div class="wa-input-row"><label>📞 Lead. Proprietari</label><input type="number" class="wa-input" id="ip_prop" min="0" value="0"></div>
+        <div class="wa-input-row"><label>📞 Lead. Cumpărători</label><input type="number" class="wa-input" id="ip_cumpar" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🏠 Prosp. stabilite</label><input type="number" class="wa-input" id="ip_prosp_stab" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🏠 Prosp. de stabilit</label><input type="number" class="wa-input" id="ip_prosp_dest" min="0" value="0"></div>
+        <div class="wa-input-row"><label>👀 Viz. stabilite</label><input type="number" class="wa-input" id="ip_vizi_stab2" min="0" value="0"></div>
+        <div class="wa-input-row"><label>👀 Viz. de stabilit 2</label><input type="number" class="wa-input" id="ip_vizi_dest" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🔄 F-up Cumpărători</label><input type="number" class="wa-input" id="ip_fu_cumpar" min="0" value="0"></div>
+      </div>
+    </div>
+    <div id="imp_form_exec" style="display:none;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="wa-input-row"><label>🔥 Hot din portofoliu</label><input type="number" class="wa-input" id="ie_hot_port" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🔥 Hot noi identificați</label><input type="number" class="wa-input" id="ie_hot_noi" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🔴 Avansați</label><input type="number" class="wa-input" id="ie_avansat" min="0" value="0"></div>
+        <div class="wa-input-row"><label>👀 Viz. stabilite</label><input type="number" class="wa-input" id="ie_viz_stab" min="0" value="0"></div>
+        <div class="wa-input-row"><label>👀 Viz. efectuate</label><input type="number" class="wa-input" id="ie_viz_ef" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🟰 Finanțare</label><input type="number" class="wa-input" id="ie_fin" min="0" value="0"></div>
+        <div class="wa-input-row"><label>💰 Oferte de preț</label><input type="number" class="wa-input" id="ie_oferte_pret" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🤝 Negocieri</label><input type="number" class="wa-input" id="ie_negocieri" min="0" value="0"></div>
+        <div class="wa-input-row"><label>📞 Proprietari</label><input type="number" class="wa-input" id="ie_prop" min="0" value="0"></div>
+        <div class="wa-input-row"><label>📞 Cumpărători</label><input type="number" class="wa-input" id="ie_cumpar" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🏠 Prosp. realizate</label><input type="number" class="wa-input" id="ie_prosp_real" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🏠 Prosp. stabilite</label><input type="number" class="wa-input" id="ie_prosp_stab" min="0" value="0"></div>
+        <div class="wa-input-row"><label>👀 Viz. realizate</label><input type="number" class="wa-input" id="ie_viz_real" min="0" value="0"></div>
+        <div class="wa-input-row"><label>👀 Viz. stabilite 2</label><input type="number" class="wa-input" id="ie_viz_stab2" min="0" value="0"></div>
+        <div class="wa-input-row"><label>🔄 F-up realizat</label><input type="number" class="wa-input" id="ie_fu_real" min="0" value="0"></div>
+      </div>
+    </div>
+    <div class="modal-btns" style="margin-top:16px;">
+      <button class="btn-cancel" onclick="closeImportModal()">Închide</button>
+      <button class="btn-cancel" onclick="resetImportForm()" style="border-color:#f59e0b;color:#f59e0b;">🔄 Resetează</button>
+      <button class="btn-send-wa" style="background:var(--accent);" onclick="saveImportReport()">💾 Salvează în Firebase</button>
+    </div>
+  </div>
+</div>
+
+<!-- BROKERI WA MODAL -->
+<div class="modal-overlay" id="waBrokeriModal" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-title">📈 Prospectări & Vizionări pe Brokeri</div>
+    <div class="modal-sub" id="waBrokeriModalSub"></div>
+    <div style="background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.3);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:0.78rem;color:#22c55e;">
+      ✅ Grupul WhatsApp este configurat — mesajul se trimite direct pe grup
+    </div>
+    <div style="font-size:0.75rem;color:var(--muted);margin-bottom:5px;font-weight:600;">Previzualizare:</div>
+    <div class="wa-preview" id="waBrokeriPreview"></div>
+    <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:0.78rem;color:#818cf8;">
+      🤖 Concluzia AI Gemini va fi adăugată aici în curând
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="document.getElementById('waBrokeriModal').style.display='none'">Anulează</button>
+      <button class="btn-send-wa" onclick="sendBrokeriToWa()">📲 Deschide WhatsApp</button>
+    </div>
+  </div>
+</div>
+
 <script>
   if('serviceWorker' in navigator){
     window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
