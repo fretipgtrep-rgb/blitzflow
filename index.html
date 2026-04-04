@@ -985,15 +985,36 @@
     const now = new Date();
     let startDate, endDate, periodLabel;
 
+    // Calculate working days for proration
+    function workingDays(start, end) {
+      let count = 0;
+      const d = new Date(start);
+      while(d <= end) {
+        const dw = d.getDay();
+        if(dw !== 0 && dw !== 6) count++;
+        d.setDate(d.getDate()+1);
+      }
+      return count;
+    }
+
+    let stdMultiplier = 1; // multiplier for weekly proration
+
     if(period === 'lunar') {
       startDate = new Date(now.getFullYear(), now.getMonth(), 1);
       endDate = new Date(now.getFullYear(), now.getMonth()+1, 0, 23,59,59);
       periodLabel = now.toLocaleDateString('ro-RO', {month:'long', year:'numeric'});
+      stdMultiplier = 1; // full month standard
     } else {
       const dow = now.getDay() || 7;
       startDate = new Date(now); startDate.setDate(now.getDate()-dow+1); startDate.setHours(0,0,0,0);
       endDate = new Date(now); endDate.setHours(23,59,59,0);
       periodLabel = `${startDate.toLocaleDateString('ro-RO')} – ${endDate.toLocaleDateString('ro-RO')}`;
+      // Proration: working days this week / working days this month
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthEnd = new Date(now.getFullYear(), now.getMonth()+1, 0, 23,59,59);
+      const totalWorkDays = workingDays(monthStart, monthEnd);
+      const weekWorkDays = workingDays(startDate, endDate);
+      stdMultiplier = weekWorkDays / totalWorkDays;
     }
 
     let allExecs = [];
@@ -1047,18 +1068,25 @@
       // Add to team totals
       teamConvProsp+=convProsp; teamConvViz+=convViz; teamIntrPlan+=intrPlan; teamIntrReal+=intrReal;
       teamVizPlan+=vizPlan; teamVizReal+=vizReal; teamNeg+=neg;
-      teamStdConvProsp+=std[0]; teamStdConvViz+=std[4]; teamStdIntrPlan+=std[1]; teamStdIntrReal+=std[2];
-      teamStdVizPlan+=std[5]; teamStdVizReal+=std[6]; teamStdNeg+=(std[8]||0);
+      teamStdConvProsp+=Math.round(std[0]*stdMultiplier);
+      teamStdConvViz+=Math.round(std[4]*stdMultiplier);
+      teamStdIntrPlan+=Math.round(std[1]*stdMultiplier);
+      teamStdIntrReal+=Math.round(std[2]*stdMultiplier);
+      teamStdVizPlan+=Math.round(std[5]*stdMultiplier);
+      teamStdVizReal+=Math.round(std[6]*stdMultiplier);
+      teamStdNeg+=Math.round((std[8]||0)*stdMultiplier);
 
       const lunaLabel = (typeof b==='string'?1:b.luna)>=5?'5+':(typeof b==='string'?1:b.luna);
+      // Apply proration for weekly standard
+      const stdVal = (v) => Math.round(v * stdMultiplier);
       const rows = [
-        ['📞 Conv. tel. prospectare', convProsp, std[0]],
-        ['📞 Conv. tel. vizionare', convViz, std[4]],
-        ['🏠 Int. plan. prosp.', intrPlan, std[1]],
-        ['✅ Contracte prosp.', intrReal, std[2]],
-        ['👀 Int. plan. viz.', vizPlan, std[5]],
-        ['✅ Contracte viz.', vizReal, std[6]],
-        ['🤝 Negocieri', neg, std[8]||0],
+        ['📞 Conv. tel. prospectare', convProsp, stdVal(std[0])],
+        ['📞 Conv. tel. vizionare', convViz, stdVal(std[4])],
+        ['🏠 Int. plan. prosp.', intrPlan, stdVal(std[1])],
+        ['✅ Contracte prosp.', intrReal, stdVal(std[2])],
+        ['👀 Int. plan. viz.', vizPlan, stdVal(std[5])],
+        ['✅ Contracte viz.', vizReal, stdVal(std[6])],
+        ['🤝 Negocieri', neg, stdVal(std[8]||0)],
       ];
 
       brokersHtml += `<div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:10px;">
