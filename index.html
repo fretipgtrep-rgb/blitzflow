@@ -665,8 +665,16 @@
     if(plans.length>0 && execs.length>0) {
       const tPC=s(plans,'prop')+s(plans,'cumpar'),tEC=s(execs,'prop')+s(execs,'cumpar');
       const tPH=s(plans,'hot'),tEH=s(execs,'hot_port')+s(execs,'hot_noi');
-      const tPVe=s(plans,'viz_ef'),tEVr=s(execs,'viz_real');
-      const tPP=s(plans,'prosp_stab')+s(plans,'prosp_dest'),tEPr=s(execs,'prosp_real');
+      // Vizionari: hot + New Business
+      const tPVe=s(plans,'viz_ef')+s(plans,'vizi_stab2');   // plan: de efectuat(hot) + stabilite(NB)
+      const tPVs=s(plans,'viz_stab')+s(plans,'vizi_dest');  // plan: de stabilit(hot) + dest(NB)
+      const tEVr=s(execs,'viz_ef')+s(execs,'viz_real');     // exec: efectuate(hot) + realizate(NB)
+      const tEVs=s(execs,'viz_stab')+s(execs,'viz_stab2');  // exec: stabilite(hot) + stabilite(NB)
+      // Prospectari: oferte_prosp(hot) + prosp_dest(NB)
+      // Prospectari: oferte_prosp(hot) + prosp_dest(NB) = total planificate
+      const tPP=s(plans,'oferte_prosp')+s(plans,'prosp_dest'); // total prosp planificate
+      const tEPr=s(execs,'prosp_real');   // prosp realizate
+      const tEPs=s(execs,'prosp_stab');   // prosp stabilite
       const tPF=s(plans,'fu_cumpar'),tEF=s(execs,'fu_real');
       const tNeg=s(execs,'negocieri'),tOp=s(execs,'oferte_pret');
       teamEl.innerHTML=`<div class="section-label">📊 Execuție vs Planificare — Echipă</div><div class="card">
@@ -674,6 +682,7 @@
         ${rRow('Contactați',tEH,tPH)}
         <div class="sub-hdr" style="margin-top:6px;"><span class="sub-hdr-lbl">🔴 Avansați</span></div>
         ${rRow('👀 Vizionări efectuate',tEVr,tPVe)}
+        ${rRow('👀 Vizionări stabilite',s(execs,'viz_stab2'),s(plans,'viz_stab'))}
         <div class="report-row"><span class="rr-label">💰 Oferte de preț</span><span class="rr-exec">${tOp}</span></div>
         <div class="report-row"><span class="rr-label">🤝 Negocieri</span><span class="rr-exec">${tNeg}</span></div>
 
@@ -789,11 +798,13 @@
     const arrow=(pct)=>pct>=90?'✅':pct>=60?'➡️':'⚠️';
 
     const tPH=sum(plans,'hot'), tEH=sum(execs,'hot_port')+sum(execs,'hot_noi');
-    const tPVe=sum(plans,'viz_ef'), tEVr=sum(execs,'viz_real');
-    const tEVs=sum(execs,'viz_stab2');
+    const tPVe=sum(plans,'viz_ef')+sum(plans,'vizi_stab2');   // plan: efectuat(hot) + stabilite(NB)
+    const tPVs=sum(plans,'viz_stab')+sum(plans,'vizi_dest');   // plan: stabilit(hot) + dest(NB)
+    const tEVr=sum(execs,'viz_ef')+sum(execs,'viz_real');      // exec: hot efectuate + NB realizate
+    const tEVs=sum(execs,'viz_stab')+sum(execs,'viz_stab2');   // exec: hot stabilite + NB stabilite
     const tOp=sum(execs,'oferte_pret'), tNeg=sum(execs,'negocieri');
     const tPC=sum(plans,'prop')+sum(plans,'cumpar'), tEC=sum(execs,'prop')+sum(execs,'cumpar');
-    const tPPr=sum(plans,'prosp_stab')+sum(plans,'prosp_dest');
+    const tPPr=sum(plans,'oferte_prosp')+sum(plans,'prosp_dest'); // plan: hot prosp + NB prosp
     const tEPr=sum(execs,'prosp_real'), tEPs=sum(execs,'prosp_stab');
     const tPF=sum(plans,'fu_cumpar'), tEF=sum(execs,'fu_real');
 
@@ -1001,21 +1012,23 @@
       if(!std) return;
 
       const brokerExecs = allExecs.filter(r=>r.name===name);
-      const convProsp = brokerExecs.reduce((s,r)=>s+(r.prop||0)+(r.cumpar||0),0);
-      const intrReal = brokerExecs.reduce((s,r)=>s+(r.prosp_real||0),0);
+      const convProsp = brokerExecs.reduce((s,r)=>s+(r.prop||0),0);
+      const convViz = brokerExecs.reduce((s,r)=>s+(r.cumpar||0),0);
       const intrPlan = brokerExecs.reduce((s,r)=>s+(r.prosp_stab||0),0);
-      const vizReal = brokerExecs.reduce((s,r)=>s+(r.viz_real||0),0);
-      const vizPlan = brokerExecs.reduce((s,r)=>s+(r.viz_stab2||0),0);
+      const intrReal = brokerExecs.reduce((s,r)=>s+(r.prosp_real||0),0);
+      const vizReal = brokerExecs.reduce((s,r)=>s+(r.viz_ef||0)+(r.viz_real||0),0);
+      const vizPlan = brokerExecs.reduce((s,r)=>s+(r.viz_stab||0)+(r.viz_stab2||0),0);
       const neg = brokerExecs.reduce((s,r)=>s+(r.negocieri||0),0);
 
       // std = [conv_prosp, intalniri_plan_prosp, intalniri_real_prosp, contracte_prosp, conv_viz, intalniri_plan_viz, intalniri_real_viz, contracte_viz]
       const rows = [
-        ['📞 Conv. tel. prosp.', convProsp, std[0]],
+        ['📞 Conv. tel. prospectare', convProsp, std[0]],
+        ['📞 Conv. tel. vizionare', convViz, std[4]],
         ['🏠 Int. planificate prosp.', intrPlan, std[1]],
-        ['✅ Int. realizate prosp.', intrReal, std[2]],
+        ['✅ Contracte prospectare', intrReal, std[2]],
         ['👀 Int. planificate viz.', vizPlan, std[5]],
-        ['✅ Int. realizate viz.', vizReal, std[6]],
-        ['🤝 Contracte negociere', neg, std[8]||0],
+        ['✅ Contracte vizionare', vizReal, std[6]],
+        ['🤝 Negocieri', neg, std[8]||0],
       ];
 
       const lunaLabel = (typeof b==='string'?1:b.luna) >= 5 ? '5+' : (typeof b==='string'?1:b.luna);
