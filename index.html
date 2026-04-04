@@ -34,7 +34,7 @@
   .page.active{display:block;}
   .page-title{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700;margin-bottom:4px;}
   .page-subtitle{color:var(--muted);font-size:0.85rem;margin-bottom:20px;}
- 
+
   .lock-screen{position:fixed;inset:0;background:rgba(10,10,10,0.97);display:flex;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(8px);}
   .lock-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:36px 32px;width:300px;text-align:center;}
   .lock-icon{font-size:2.2rem;margin-bottom:12px;}
@@ -1552,4 +1552,16 @@
     document.getElementById('waBrokeriModal').style.display='none';
   };
 
+  // ── INIT ──────────────────────────────────────────────────
+  loadBrokersFromFirebase().then(() => checkAndAdvanceLuna());
+  window.initBrokerPage();
 
+</script>
+
+<script>
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  }
+</script>
+</body>
+</html>
