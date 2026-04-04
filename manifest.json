@@ -1,6 +1,6 @@
 {
-  "name": "BlitzFlow — Blitz Imobiliare",
-  "short_name": "BlitzFlow",
+  "name": "BlitzReport — Blitz Imobiliare",
+  "short_name": "BlitzReport",
   "description": "Sistem de raportare zilnica pentru echipa Blitz Imobiliare",
   "start_url": "/blitzflow/",
   "scope": "/blitzflow/",

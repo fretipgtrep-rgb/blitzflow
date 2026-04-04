@@ -6,9 +6,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="BlitzFlow">
+<meta name="apple-mobile-web-app-title" content="BlitzReport">
 <meta name="theme-color" content="#1B4D3E">
-<title>BlitzFlow — Blitz Imobiliare</title>
+<title>BlitzReport — Blitz Imobiliare</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -244,7 +244,7 @@
 </div>
 
 <nav>
-  <div class="logo">BLITZ<span>Flow</span></div>
+  <div class="logo">BLITZ<span>Report</span></div>
   <div class="nav-tabs">
     <button class="nav-tab active" id="tab-broker" onclick="showPage('broker',this)">📋 Broker</button>
     <button class="nav-tab" id="tab-manager" onclick="tryManager(this)">📊 Manager</button>
@@ -869,7 +869,7 @@
       if(missing.length>0) waText+=`\n${'─'.repeat(32)}\n⚠️ NU AU RAPORTAT EXECUȚIA:\n${missing.map(m=>'• '+m).join('\n')}\n`;
     }
 
-    waText += `\n${'─'.repeat(32)}\n📱 BlitzFlow | Blitz Imobiliare`;
+    waText += `\n${'─'.repeat(32)}\n📱 BlitzReport | Blitz Imobiliare`;
 
     document.getElementById('waPreview').textContent = waText;
     document.getElementById('waModalSub').textContent = `${periodEmoji} Raport ${periodTitle} — ${periodLabel}`;
@@ -1177,7 +1177,7 @@
 
     document.getElementById('standardContent').innerHTML = teamHtml + brokersHtml ||
       '<div style="text-align:center;color:var(--muted);padding:20px;">Nu există date pentru această perioadă.</div>';
-    window._waStdText = waTeamText + `\n${'─'.repeat(32)}\n📱 BlitzFlow | Blitz Imobiliare`;
+    window._waStdText = waTeamText + `\n${'─'.repeat(32)}\n📱 BlitzReport | Blitz Imobiliare`;
   };
 
 
@@ -1299,10 +1299,10 @@
     return perm === 'granted';
   }
 
-  function sendNotif(title, body, icon) {
+  function sendNotif(title, body) {
     if(Notification.permission !== 'granted') return;
     const n = new Notification(title, {
-      body, icon: icon || 'icon-192.png',
+      body, icon: 'icon-192.png',
       badge: 'icon-192.png',
       vibrate: [200, 100, 200]
     });
@@ -1310,17 +1310,16 @@
     setTimeout(() => n.close(), 10000);
   }
 
-  function scheduleNotifications() {
-    // Clear existing timers
+  function scheduleNotifications(isManager) {
     notifTimers.forEach(t => clearTimeout(t));
     notifTimers = [];
 
     const now = new Date();
-    const dow = now.getDay(); // 0=Sun, 6=Sat
-    const isWeekdayToday = dow >= 1 && dow <= 5;
+    const dow = now.getDay();
+    const isWeekday = dow >= 1 && dow <= 5;
     const isFriday = dow === 5;
 
-    if(!isWeekdayToday) return; // No notifications on weekends
+    if(!isWeekday) return;
 
     function msUntil(h, m) {
       const target = new Date();
@@ -1329,45 +1328,77 @@
       return ms > 0 ? ms : null;
     }
 
-    // Planificare: 08:45 (15 min before 09:00)
-    const msPlan = msUntil(8, 45);
-    if(msPlan) {
+    // ── NOTIFICĂRI BROKER ──────────────────────────────
+    // 08:30 — Reminder planificare
+    const msPlan1 = msUntil(8, 30);
+    if(msPlan1) {
       notifTimers.push(setTimeout(() => {
-        sendNotif('⏰ BlitzFlow — Planificare', 'Sesiunea de planificare se închide în 15 minute! (09:00)');
-      }, msPlan));
+        sendNotif('🌅 BlitzReport — Planificare', 'Nu uita să completezi planificarea! Se închide la 09:00.');
+      }, msPlan1));
     }
 
-    // Execuție: 20:45 (15 min before 21:00)
-    const msExec = msUntil(20, 45);
-    if(msExec) {
+    // 08:45 — Planificarea se închide în 15 min
+    const msPlan2 = msUntil(8, 45);
+    if(msPlan2) {
       notifTimers.push(setTimeout(() => {
-        sendNotif('⏰ BlitzFlow — Execuție', 'Sesiunea de execuție se închide în 15 minute! (21:00)');
-      }, msExec));
+        sendNotif('⏰ BlitzReport — Planificare', 'Planificarea se închide în 15 minute! (09:00)');
+      }, msPlan2));
     }
 
-    // Vineri 21:00 — raport săptămânal
-    if(isFriday) {
+    // 08:55 — Ultimul reminder
+    const msPlan3 = msUntil(8, 55);
+    if(msPlan3) {
+      notifTimers.push(setTimeout(() => {
+        sendNotif('🚨 BlitzReport — Urgent!', 'Planificarea se închide în 5 minute! Completează acum!');
+      }, msPlan3));
+    }
+
+    // 17:00 — Execuția s-a deschis
+    const msExecStart = msUntil(17, 0);
+    if(msExecStart) {
+      notifTimers.push(setTimeout(() => {
+        sendNotif('🌆 BlitzReport — Execuție', 'Sesiunea de execuție s-a deschis! Completează până la 21:00.');
+      }, msExecStart));
+    }
+
+    // 20:45 — Execuția se închide în 15 min
+    const msExecEnd = msUntil(20, 45);
+    if(msExecEnd) {
+      notifTimers.push(setTimeout(() => {
+        sendNotif('⏰ BlitzReport — Execuție', 'Execuția se închide în 15 minute! (21:00)');
+      }, msExecEnd));
+    }
+
+    // ── NOTIFICĂRI MANAGER (extra) ─────────────────────
+    if(isManager && isFriday) {
       const msWeekly = msUntil(21, 0);
       if(msWeekly) {
         notifTimers.push(setTimeout(() => {
-          sendNotif('📊 BlitzFlow — Raport Săptămânal', 'E vineri! Nu uita să trimiți raportul săptămânal pe grup.');
+          sendNotif('📊 BlitzReport — Raport Săptămânal', 'E vineri! Nu uita să trimiți raportul săptămânal pe grup.');
         }, msWeekly));
       }
     }
 
-    // Re-schedule tomorrow
+    // Re-schedule mâine
     const tomorrow = new Date();
     tomorrow.setDate(now.getDate() + 1);
     tomorrow.setHours(0, 1, 0, 0);
-    const msNextDay = tomorrow - now;
-    notifTimers.push(setTimeout(() => scheduleNotifications(), msNextDay));
+    notifTimers.push(setTimeout(() => scheduleNotifications(isManager), tomorrow - now));
   }
 
-  // Init notifications when manager unlocks
+  // Init notificări broker — se apelează la încărcarea paginii
+  async function initBrokerNotifications() {
+    const hasPermission = await requestNotifPermission();
+    if(hasPermission) {
+      scheduleNotifications(false);
+    }
+  }
+
+  // Init notificări manager — se apelează la unlock
   async function initManagerNotifications() {
     const hasPermission = await requestNotifPermission();
     if(hasPermission) {
-      scheduleNotifications();
+      scheduleNotifications(true);
       showToast('🔔 Notificările sunt active!', '#1B4D3E');
     } else {
       showToast('⚠️ Permite notificările pentru remindere!', '#f59e0b');
@@ -1532,7 +1563,7 @@
       waText += `👀 Vizionări: ${viz_real} realizate / ${viz_stab} stabilite\n`;
     });
 
-    waText += `\n${'─'.repeat(32)}\n📱 BlitzFlow | Blitz Imobiliare`;
+    waText += `\n${'─'.repeat(32)}\n📱 BlitzReport | Blitz Imobiliare`;
 
     // Show preview modal
     window._waBrokeriText = waText;
@@ -1555,6 +1586,7 @@
   // ── INIT ──────────────────────────────────────────────────
   loadBrokersFromFirebase().then(() => checkAndAdvanceLuna());
   window.initBrokerPage();
+  initBrokerNotifications();
 
 </script>
 
