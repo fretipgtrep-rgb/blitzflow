@@ -966,43 +966,69 @@
 
 
   // ── STANDARD REPORT ─────────────────────────────────────
-  window.openStandardModal = async function() {
+  window.openStandardModal = function() {
+    document.getElementById('standardModal').style.display = 'flex';
+    loadStandard('lunar', document.getElementById('stdBtnLunar'));
+  };
+
+  window.loadStandard = async function(period, btn) {
+    // Update button styles
+    document.querySelectorAll('#standardModal .btn-send-wa, #standardModal .btn-secondary').forEach(b => {
+      b.className = 'btn-secondary'; b.style.flex='1';
+    });
+    if(btn) { btn.className = 'btn-send-wa'; btn.style.background='var(--accent)'; btn.style.flex='1'; }
+
     showLoading('Se generează raportul vs standard...');
 
-    // Get monthly data from Firebase
     const snapshot = await window.dbGet(window.dbRef(window.DB, 'reports'));
     const allData = snapshot.val() || {};
     const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthEnd = new Date(now.getFullYear(), now.getMonth()+1, 0, 23,59,59);
-    const monthLabel = now.toLocaleDateString('ro-RO', {month:'long', year:'numeric'});
+    let startDate, endDate, periodLabel;
+
+    if(period === 'lunar') {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = new Date(now.getFullYear(), now.getMonth()+1, 0, 23,59,59);
+      periodLabel = now.toLocaleDateString('ro-RO', {month:'long', year:'numeric'});
+    } else {
+      const dow = now.getDay() || 7;
+      startDate = new Date(now); startDate.setDate(now.getDate()-dow+1); startDate.setHours(0,0,0,0);
+      endDate = new Date(now); endDate.setHours(23,59,59,0);
+      periodLabel = `${startDate.toLocaleDateString('ro-RO')} – ${endDate.toLocaleDateString('ro-RO')}`;
+    }
 
     let allExecs = [];
     Object.keys(allData).forEach(dateKey => {
       const parts = dateKey.split('-');
       if(parts.length!==3) return;
       const d = new Date(+parts[2], +parts[1]-1, +parts[0]);
-      if(d >= monthStart && d <= monthEnd) {
-        Object.values(allData[dateKey]).forEach(r => {
-          if(r.type==='exec') allExecs.push(r);
-        });
+      const dw = d.getDay();
+      if(dw===0||dw===6) return; // skip weekends
+      if(d>=startDate && d<=endDate) {
+        Object.values(allData[dateKey]).forEach(r => { if(r.type==='exec') allExecs.push(r); });
       }
     });
 
     hideLoading();
 
     const brokers = getBrokers();
-    document.getElementById('standardModalSub').textContent = `${monthLabel} — Activitate vs Standard`;
+    const periodEmoji = period==='lunar'?'🗓️':'📊';
+    const periodTitle = period==='lunar'?'LUNAR':'SĂPTĂMÂNAL';
+    document.getElementById('standardModalSub').textContent = `${periodEmoji} ${periodTitle} — ${periodLabel}`;
 
-    const pct = (r,s) => s===0 ? (r>0?'🚀':'–') : Math.round(r/s*100)+'%';
-    const cls = (r,s) => {
-      if(s===0) return r>0?'color:#22c55e':'color:var(--muted)';
-      const p = r/s*100;
-      return p>=90?'color:#22c55e':p>=60?'color:#f59e0b':'color:#ef4444';
-    };
+    const pct = (r,s) => s===0?(r>0?'🚀':'–'):Math.round(r/s*100)+'%';
+    const cls = (r,s) => { if(s===0) return r>0?'color:#22c55e':'color:var(--muted)'; const p=r/s*100; return p>=90?'color:#22c55e':p>=60?'color:#f59e0b':'color:#ef4444'; };
+    const arrow = (r,s) => { if(s===0) return r>0?'🚀':'–'; const p=r/s*100; return p>=90?'✅':p>=60?'➡️':'⚠️'; };
 
-    let html = '';
-    let waStdText = `📊 RAPORT LUNAR vs STANDARD — ${monthLabel}\n${'─'.repeat(32)}\n`;
+    // Calculate team totals
+    let teamConvProsp=0, teamConvViz=0, teamIntrPlan=0, teamIntrReal=0;
+    let teamVizPlan=0, teamVizReal=0, teamNeg=0;
+    let teamStdConvProsp=0, teamStdConvViz=0, teamStdIntrPlan=0, teamStdIntrReal=0;
+    let teamStdVizPlan=0, teamStdVizReal=0, teamStdNeg=0;
+
+    let brokersHtml = '';
+    let waStdText = `📊 STANDARD ${periodTitle} — ${periodLabel}
+${'─'.repeat(32)}
+`;
 
     brokers.forEach(b => {
       const name = typeof b==='string'?b:b.name;
@@ -1011,33 +1037,36 @@
       const std = STANDARDS[dept] ? STANDARDS[dept][lunaIdx] : null;
       if(!std) return;
 
-      const brokerExecs = allExecs.filter(r=>r.name===name);
-      const convProsp = brokerExecs.reduce((s,r)=>s+(r.prop||0),0);
-      const convViz = brokerExecs.reduce((s,r)=>s+(r.cumpar||0),0);
-      const intrPlan = brokerExecs.reduce((s,r)=>s+(r.prosp_stab||0),0);
-      const intrReal = brokerExecs.reduce((s,r)=>s+(r.prosp_real||0),0);
-      const vizReal = brokerExecs.reduce((s,r)=>s+(r.viz_ef||0)+(r.viz_real||0),0);
-      const vizPlan = brokerExecs.reduce((s,r)=>s+(r.viz_stab||0)+(r.viz_stab2||0),0);
-      const neg = brokerExecs.reduce((s,r)=>s+(r.negocieri||0),0);
+      const be = allExecs.filter(r=>r.name===name);
+      const convProsp = be.reduce((s,r)=>s+(r.prop||0),0);
+      const convViz   = be.reduce((s,r)=>s+(r.cumpar||0),0);
+      const intrPlan  = be.reduce((s,r)=>s+(r.prosp_stab||0),0);
+      const intrReal  = be.reduce((s,r)=>s+(r.prosp_real||0),0);
+      const vizPlan   = be.reduce((s,r)=>s+(r.viz_stab||0)+(r.viz_stab2||0),0);
+      const vizReal   = be.reduce((s,r)=>s+(r.viz_ef||0)+(r.viz_real||0),0);
+      const neg       = be.reduce((s,r)=>s+(r.negocieri||0),0);
 
-      // std = [conv_prosp, intalniri_plan_prosp, intalniri_real_prosp, contracte_prosp, conv_viz, intalniri_plan_viz, intalniri_real_viz, contracte_viz]
+      // Add to team totals
+      teamConvProsp+=convProsp; teamConvViz+=convViz; teamIntrPlan+=intrPlan; teamIntrReal+=intrReal;
+      teamVizPlan+=vizPlan; teamVizReal+=vizReal; teamNeg+=neg;
+      teamStdConvProsp+=std[0]; teamStdConvViz+=std[4]; teamStdIntrPlan+=std[1]; teamStdIntrReal+=std[2];
+      teamStdVizPlan+=std[5]; teamStdVizReal+=std[6]; teamStdNeg+=(std[8]||0);
+
+      const lunaLabel = (typeof b==='string'?1:b.luna)>=5?'5+':(typeof b==='string'?1:b.luna);
       const rows = [
         ['📞 Conv. tel. prospectare', convProsp, std[0]],
         ['📞 Conv. tel. vizionare', convViz, std[4]],
-        ['🏠 Int. planificate prosp.', intrPlan, std[1]],
-        ['✅ Contracte prospectare', intrReal, std[2]],
-        ['👀 Int. planificate viz.', vizPlan, std[5]],
-        ['✅ Contracte vizionare', vizReal, std[6]],
+        ['🏠 Int. plan. prosp.', intrPlan, std[1]],
+        ['✅ Contracte prosp.', intrReal, std[2]],
+        ['👀 Int. plan. viz.', vizPlan, std[5]],
+        ['✅ Contracte viz.', vizReal, std[6]],
         ['🤝 Negocieri', neg, std[8]||0],
       ];
 
-      const lunaLabel = (typeof b==='string'?1:b.luna) >= 5 ? '5+' : (typeof b==='string'?1:b.luna);
-      html += `<div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:12px;">
+      brokersHtml += `<div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:10px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div>
-            <span style="font-family:Syne,sans-serif;font-weight:800;font-size:0.9rem;">${name}</span>
-            <span style="font-size:0.72rem;color:var(--muted);margin-left:8px;">${dept} · Luna ${lunaLabel}</span>
-          </div>
+          <span style="font-family:Syne,sans-serif;font-weight:800;font-size:0.9rem;">${name}</span>
+          <span style="font-size:0.72rem;color:var(--muted);">${dept} · Luna ${lunaLabel}</span>
         </div>
         <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
           <tr style="color:var(--muted);font-size:0.7rem;font-weight:700;">
@@ -1046,8 +1075,7 @@
             <td style="padding:4px 6px;text-align:center;">Standard</td>
             <td style="padding:4px 6px;text-align:center;">%</td>
           </tr>
-          ${rows.map(([lbl,real,stand])=>`
-          <tr style="border-top:1px solid var(--border);">
+          ${rows.map(([lbl,real,stand])=>`<tr style="border-top:1px solid var(--border);">
             <td style="padding:5px 6px;">${lbl}</td>
             <td style="padding:5px 6px;text-align:center;font-family:Syne,sans-serif;font-weight:700;">${real}</td>
             <td style="padding:5px 6px;text-align:center;color:var(--muted);">${stand||'–'}</td>
@@ -1056,19 +1084,67 @@
         </table>
       </div>`;
 
-      waStdText += `\n💠 ${name} — ${dept} (Luna ${lunaLabel})\n`;
+      waStdText += `
+💠 ${name} — ${dept} (Luna ${lunaLabel})
+`;
       rows.forEach(([lbl,real,stand]) => {
-        const p = stand>0?Math.round(real/stand*100):null;
-        const arrow = p===null?'–':p>=90?'✅':p>=60?'➡️':'⚠️';
-        waStdText += `${arrow} ${lbl}: ${real} / ${stand||'–'} ${p!==null?'('+p+'%)':''}
+        waStdText += `${arrow(real,stand)} ${lbl}: ${real} / ${stand||'–'} (${pct(real,stand)})
 `;
       });
     });
 
-    document.getElementById('standardContent').innerHTML = html || '<div style="text-align:center;color:var(--muted);padding:20px;">Nu există date pentru luna curentă.</div>';
-    document.getElementById('standardModal').style.display = 'flex';
-    window._waStdText = waStdText + `\n${'─'.repeat(32)}\n📱 BlitzFlow | Blitz Imobiliare`;
+    // Team summary HTML
+    const teamRows = [
+      ['📞 Conv. tel. prospectare', teamConvProsp, teamStdConvProsp],
+      ['📞 Conv. tel. vizionare', teamConvViz, teamStdConvViz],
+      ['🏠 Int. plan. prosp.', teamIntrPlan, teamStdIntrPlan],
+      ['✅ Contracte prosp.', teamIntrReal, teamStdIntrReal],
+      ['👀 Int. plan. viz.', teamVizPlan, teamStdVizPlan],
+      ['✅ Contracte viz.', teamVizReal, teamStdVizReal],
+      ['🤝 Negocieri', teamNeg, teamStdNeg],
+    ];
+
+    const teamHtml = `<div style="background:linear-gradient(135deg,#1B4D3E22,#0d2e2522);border:1px solid #1B4D3E55;border-radius:12px;padding:14px;margin-bottom:16px;">
+      <div style="font-family:Syne,sans-serif;font-weight:800;font-size:0.95rem;margin-bottom:10px;color:#4ade80;">🏆 SUMAR ECHIPĂ</div>
+      <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+        <tr style="color:var(--muted);font-size:0.7rem;font-weight:700;">
+          <td style="padding:4px 6px;">Activitate</td>
+          <td style="padding:4px 6px;text-align:center;">Realizat</td>
+          <td style="padding:4px 6px;text-align:center;">Standard</td>
+          <td style="padding:4px 6px;text-align:center;">%</td>
+        </tr>
+        ${teamRows.map(([lbl,real,stand])=>`<tr style="border-top:1px solid var(--border);">
+          <td style="padding:5px 6px;">${lbl}</td>
+          <td style="padding:5px 6px;text-align:center;font-family:Syne,sans-serif;font-weight:700;">${real}</td>
+          <td style="padding:5px 6px;text-align:center;color:var(--muted);">${stand||'–'}</td>
+          <td style="padding:5px 6px;text-align:center;font-weight:700;${cls(real,stand)}">${pct(real,stand)}</td>
+        </tr>`).join('')}
+      </table>
+    </div>`;
+
+    // WA team summary
+    let waTeamText = `📊 STANDARD ${periodTitle} — ${periodLabel}
+${'─'.repeat(32)}
+
+🏆 SUMAR ECHIPĂ
+`;
+    teamRows.forEach(([lbl,real,stand]) => {
+      waTeamText += `${arrow(real,stand)} ${lbl}: ${real} / ${stand} (${pct(real,stand)})
+`;
+    });
+    waTeamText += `
+${'─'.repeat(32)}
+` + waStdText.split('
+').slice(2).join('
+');
+
+    document.getElementById('standardContent').innerHTML = teamHtml + brokersHtml ||
+      '<div style="text-align:center;color:var(--muted);padding:20px;">Nu există date pentru această perioadă.</div>';
+    window._waStdText = waTeamText + `
+${'─'.repeat(32)}
+📱 BlitzFlow | Blitz Imobiliare`;
   };
+
 
   window.sendStandardToWa = function() {
     const WA_GROUP = 'https://chat.whatsapp.com/D6POd1Gr2BsBTKrvnfRmOa';
@@ -1369,8 +1445,12 @@
 <!-- STANDARD MODAL -->
 <div class="modal-overlay" id="standardModal" style="display:none;">
   <div class="modal-box" style="width:min(680px,96vw);max-height:90vh;">
-    <div class="modal-title">📊 Raport Lunar vs Standard</div>
-    <div class="modal-sub" id="standardModalSub">Activitate luna curentă față de standardul fiecărui broker</div>
+    <div class="modal-title">📊 Raport vs Standard</div>
+    <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
+      <button onclick="loadStandard('lunar',this)" class="btn-send-wa" style="background:var(--accent);flex:1;" id="stdBtnLunar">🗓️ Lunar</button>
+      <button onclick="loadStandard('saptamanal',this)" class="btn-secondary" style="flex:1;" id="stdBtnSapt">📊 Săptămânal</button>
+    </div>
+    <div class="modal-sub" id="standardModalSub">Activitate față de standardul fiecărui broker</div>
     <div id="standardContent" style="margin-bottom:16px;"></div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="document.getElementById('standardModal').style.display='none'">Închide</button>
