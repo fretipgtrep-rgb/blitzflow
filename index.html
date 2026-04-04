@@ -197,7 +197,7 @@
     <div class="lock-icon">🔒</div>
     <div class="lock-title">Acces Manager</div>
     <div class="lock-sub">Introdu parola pentru dashboard</div>
-    <input type="password" class="lock-input" id="lockInput" placeholder="••••••" onkeydown="if(event.key==='Enter')checkPass()">
+    <input type="password" class="lock-input" id="lockInput" placeholder="••••" inputmode="numeric" pattern="[0-9]*" onkeydown="if(event.key==='Enter')checkPass()">
     <button class="lock-btn" onclick="checkPass()">Intră în Manager</button>
     <div class="lock-error" id="lockError">Parolă incorectă.</div>
   </div>
@@ -429,7 +429,7 @@
   }
 
   // ── GLOBALS ─────────────────────────────────────────────
-  const PASS = '1234';
+  const PASS = '0807';
 
   // ── STANDARDE BLITZ ────────────────────────────────────
   const STANDARDS = {
