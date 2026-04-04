@@ -492,7 +492,7 @@
   function todayStr() { return new Date().toLocaleDateString('ro-RO'); }
   function getHour() { return new Date().getHours(); }
   window.getHour = getHour;
-  window.isWeekend = function() { const d=new Date().getDay(); return d===0||d===6; }
+  window.isWeekend = function() { const d=new Date().getDay(); return d===0; } // doar duminica e weekend
   window.isOpen = function(type) {
     if(isWeekend()) return false;
     const h=getHour(); return h>=WINDOWS[type].start && h<WINDOWS[type].end;
@@ -552,14 +552,14 @@
     const planOpen=isOpen('plan'), execOpen=isOpen('exec');
     const h=getHour();
     const dow=new Date().getDay();
-    const weekend=dow===0||dow===6;
+    const weekend=dow===0; // doar duminica
     let html='';
     if(planOpen) {
       html=`<div class="time-window-banner twb-open"><span style="font-size:1.3rem">🌅</span><div><div class="twb-title">Planificarea este deschisă</div><div class="twb-sub">Poți completa până la 09:00</div></div></div>`;
     } else if(execOpen) {
       html=`<div class="time-window-banner twb-open"><span style="font-size:1.3rem">🌆</span><div><div class="twb-title">Execuția este deschisă</div><div class="twb-sub">Poți completa până la 21:00</div></div></div>`;
     } else if(weekend) {
-      html=`<div class="time-window-banner twb-closed"><span style="font-size:1.3rem">🔒</span><div><div class="twb-title">Weekend — Fără raportare</div><div class="twb-sub">Raportarea se reia luni la 06:00</div></div></div>`;
+      html=`<div class="time-window-banner twb-closed"><span style="font-size:1.3rem">🔒</span><div><div class="twb-title">Duminică — Fără raportare</div><div class="twb-sub">Raportarea se reia luni la 06:00</div></div></div>`;
     } else if(h>=9 && h<17) {
       html=`<div class="time-window-banner twb-closed"><span style="font-size:1.3rem">☕</span><div><div class="twb-title">Pauză între sesiuni</div><div class="twb-sub">Execuția se deschide la 17:00</div></div></div>`;
     } else {
