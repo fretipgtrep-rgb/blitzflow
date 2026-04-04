@@ -453,11 +453,14 @@
   }
   function todayStr() { return new Date().toLocaleDateString('ro-RO'); }
   function getHour() { return new Date().getHours(); }
-  function isWeekend() { const d=new Date().getDay(); return d===0||d===6; }
-  function isOpen(type) {
+  window.getHour = getHour;
+  window.isWeekend = function() { const d=new Date().getDay(); return d===0||d===6; }
+  window.isOpen = function(type) {
     if(isWeekend()) return false;
     const h=getHour(); return h>=WINDOWS[type].start && h<WINDOWS[type].end;
   }
+  function isWeekend() { return window.isWeekend(); }
+  function isOpen(type) { return window.isOpen(type); }
 
   function showToast(msg, color) {
     const t = document.getElementById('toast');
@@ -502,11 +505,11 @@
     document.getElementById('page-'+page).classList.add('active');
     if (btn) btn.classList.add('active');
     if (page==='manager') startLiveManager();
-    if (page==='broker') initBrokerPage();
+    if (page==='broker') window.initBrokerPage();
   };
 
   // ── BROKER PAGE ─────────────────────────────────────────
-  function initBrokerPage() {
+  window.initBrokerPage = function() {
     const planOpen=isOpen('plan'), execOpen=isOpen('exec');
     const h=getHour();
     const dow=new Date().getDay();
