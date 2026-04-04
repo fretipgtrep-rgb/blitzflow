@@ -390,13 +390,43 @@
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
   import { getDatabase, ref, set, onValue, remove, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+  import { getMessaging, getToken } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
 
   // ── FIREBASE CONFIG ─────────────────────────────────────
   const firebaseConfig = {
-    databaseURL: 'https://blitzflow-351d2-default-rtdb.europe-west1.firebasedatabase.app'
+    apiKey: "AIzaSyA73UzN4bnco-Fo58sd5pGrb7ji5mchZGI",
+    authDomain: "blitzflow-351d2.firebaseapp.com",
+    databaseURL: 'https://blitzflow-351d2-default-rtdb.europe-west1.firebasedatabase.app',
+    projectId: "blitzflow-351d2",
+    storageBucket: "blitzflow-351d2.firebasestorage.app",
+    messagingSenderId: "889558589771",
+    appId: "1:889558589771:web:d76128669072390e4d08ce"
   };
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
+
+  // ── PUSH NOTIFICATIONS REGISTRATION ─────────────────────
+  const VAPID_KEY = 'BJPhhUOjuJztQxWhfCeso_ZC95EBsN84WLElJp8RgKyMHnYtnbRt2ZXtY8RW8GihMZXYYhEOlcxCIDY0dfeLcmg';
+  async function registerPushNotifications() {
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      const reg = await navigator.serviceWorker.ready;
+      const messaging = getMessaging(app);
+      const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+      if (token) {
+        // Save token to Firebase so Cloudflare Worker can use it
+        const brokerName = localStorage.getItem('bf_broker_name') || 'unknown';
+        await set(ref(db, 'push_tokens/' + token.replace(/[.#$[\]]/g, '_')), {
+          token,
+          name: brokerName,
+          updatedAt: Date.now()
+        });
+        console.log('Push token saved:', token.substring(0, 20) + '...');
+      }
+    } catch(e) {
+      console.log('Push registration skipped:', e.message);
+    }
+  }
 
   // ── GLOBALS ─────────────────────────────────────────────
   const PASS = '1234';
@@ -1422,6 +1452,7 @@
     const hasPermission = await requestNotifPermission();
     if(hasPermission) {
       scheduleNotifications(false);
+      await registerPushNotifications();
     }
   }
 
@@ -1430,6 +1461,7 @@
     const hasPermission = await requestNotifPermission();
     if(hasPermission) {
       scheduleNotifications(true);
+      await registerPushNotifications();
       showToast('🔔 Notificările sunt active!', '#1B4D3E');
     } else {
       showToast('⚠️ Permite notificările pentru remindere!', '#f59e0b');
