@@ -1026,9 +1026,7 @@
     let teamStdVizPlan=0, teamStdVizReal=0, teamStdNeg=0;
 
     let brokersHtml = '';
-    let waStdText = `📊 STANDARD ${periodTitle} — ${periodLabel}
-${'─'.repeat(32)}
-`;
+    let waStdText = `📊 STANDARD ${periodTitle} — ${periodLabel}\n${'─'.repeat(32)}\n`;
 
     brokers.forEach(b => {
       const name = typeof b==='string'?b:b.name;
@@ -1084,12 +1082,9 @@ ${'─'.repeat(32)}
         </table>
       </div>`;
 
-      waStdText += `
-💠 ${name} — ${dept} (Luna ${lunaLabel})
-`;
+      waStdText += `\n💠 ${name} — ${dept} (Luna ${lunaLabel})\n`;
       rows.forEach(([lbl,real,stand]) => {
-        waStdText += `${arrow(real,stand)} ${lbl}: ${real} / ${stand||'–'} (${pct(real,stand)})
-`;
+        waStdText += `${arrow(real,stand)} ${lbl}: ${real} / ${stand||'–'} (${pct(real,stand)})\n`;
       });
     });
 
@@ -1123,26 +1118,16 @@ ${'─'.repeat(32)}
     </div>`;
 
     // WA team summary
-    let waTeamText = `📊 STANDARD ${periodTitle} — ${periodLabel}
-${'─'.repeat(32)}
-
-🏆 SUMAR ECHIPĂ
-`;
+    let waTeamText = `📊 STANDARD ${periodTitle} — ${periodLabel}\n${'─'.repeat(32)}\n\n🏆 SUMAR ECHIPĂ\n`;
     teamRows.forEach(([lbl,real,stand]) => {
       waTeamText += `${arrow(real,stand)} ${lbl}: ${real} / ${stand} (${pct(real,stand)})
 `;
     });
-    waTeamText += `
-${'─'.repeat(32)}
-` + waStdText.split('
-').slice(2).join('
-');
+    waTeamText += `\n${'─'.repeat(32)}\n` + waStdText.split('\n').slice(2).join('\n');
 
     document.getElementById('standardContent').innerHTML = teamHtml + brokersHtml ||
       '<div style="text-align:center;color:var(--muted);padding:20px;">Nu există date pentru această perioadă.</div>';
-    window._waStdText = waTeamText + `
-${'─'.repeat(32)}
-📱 BlitzFlow | Blitz Imobiliare`;
+    window._waStdText = waTeamText + `\n${'─'.repeat(32)}\n📱 BlitzFlow | Blitz Imobiliare`;
   };
 
 
