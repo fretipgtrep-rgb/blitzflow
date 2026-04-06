@@ -1,36 +1,36 @@
-// BlitzReport Service Worker v2.0 — Push Notifications
-importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
-
-const CACHE_NAME = 'blitzreport-v2';
+// BlitzReport Service Worker v3.0 — Web Push nativ
+const CACHE_NAME = 'blitzreport-v3';
 const ASSETS = ['/', '/index.html', '/manifest.json'];
 
-firebase.initializeApp({
-  apiKey: "AIzaSyA73UzN4bnco-Fo58sd5pGrb7ji5mchZGI",
-  projectId: "blitzflow-351d2",
-  messagingSenderId: "889558589771",
-  appId: "1:889558589771:web:d76128669072390e4d08ce"
+// Primeste notificari push cand aplicatia e INCHISA
+self.addEventListener('push', event => {
+  let data = { title: 'BlitzReport', body: '' };
+  try { data = event.data.json(); } catch(e) {}
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'BlitzReport', {
+      body: data.body || '',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      vibrate: [200, 100, 200],
+      tag: 'blitzreport-notif',
+      renotify: true
+    })
+  );
 });
 
-const messaging = firebase.messaging();
-
-messaging.onBackgroundMessage(function(payload) {
-  const { title, body } = payload.notification || {};
-  self.registration.showNotification(title || 'BlitzReport', {
-    body: body || '',
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
-    vibrate: [200, 100, 200],
-    tag: 'blitzreport-notif',
-    renotify: true
-  });
+// Click pe notificare — deschide aplicatia
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(clients.openWindow('/'));
 });
 
+// Install
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
   self.skipWaiting();
 });
 
+// Activate
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -40,6 +40,7 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
+// Fetch
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   if (!event.request.url.startsWith(self.location.origin)) return;
