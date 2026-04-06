@@ -1484,9 +1484,19 @@
       const reg = await navigator.serviceWorker.ready;
       status.textContent = '⏳ SW ready, se abonează la push...';
       const vapidKey = urlBase64ToUint8Array(VAPID_KEY);
-      let sub = await reg.pushManager.getSubscription();
+      status.textContent = '⏳ VAPID key: ' + VAPID_KEY.substring(0, 20) + '... lungime: ' + vapidKey.length;
+      await new Promise(r => setTimeout(r, 2000));
+      let sub = await Promise.race([
+        reg.pushManager.getSubscription(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('getSubscription timeout')), 5000))
+      ]);
+      status.textContent = '⏳ getSubscription: ' + (sub ? 'exista' : 'null');
+      await new Promise(r => setTimeout(r, 1000));
       if (!sub) {
-        sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: vapidKey });
+        sub = await Promise.race([
+          reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: vapidKey }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('subscribe timeout dupa 10s')), 10000))
+        ]);
       }
       if (sub) {
         status.textContent = '⏳ Abonament ok, se salvează în Firebase...';
