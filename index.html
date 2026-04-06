@@ -779,7 +779,7 @@
         ${rRow('Total contacte',tEC,tPC)}
         <div class="sub-hdr" style="margin-top:6px;"><span class="sub-hdr-lbl">🏠 Prospectări</span></div>
         ${rRow('Realizate',tEPr,s(plans,'prosp_stab'))}
-        ${rRow('Stabilite',tEPs,s(plans,'oferte_prosp')+s(plans,'prosp_dest'))}
+        ${rRow('Stabilite',tEPs,s(plans,'prosp_dest'))}
         <div class="sub-hdr" style="margin-top:6px;"><span class="sub-hdr-lbl">🔄 Follow-up Cumpărători</span></div>
         ${rRow('Realizat',tEF,tPF)}
       </div>`;
@@ -888,13 +888,14 @@
     const arrow=(pct)=>pct>=90?'✅':pct>=60?'➡️':'⚠️';
 
     const tPH=sum(plans,'hot'), tEH=sum(execs,'hot_port')+sum(execs,'hot_noi');
-    const tPVe=sum(plans,'vizi_stab2');   // plan viz de efectuat NB
+    const tPVe=sum(plans,'vizi_stab2');   // plan viz stabilite NB (de efectuat)
     const tPVs=sum(plans,'vizi_dest');    // plan viz de stabilit NB
-    const tEVr=sum(execs,'viz_ef')+sum(execs,'viz_real');      // exec: hot efectuate + NB realizate
-    const tEVs=sum(execs,'viz_stab')+sum(execs,'viz_stab2');   // exec: hot stabilite + NB stabilite
+    const tEVr=sum(execs,'viz_real');     // exec: NB realizate
+    const tEVs=sum(execs,'viz_stab2');   // exec: NB stabilite
     const tOp=sum(execs,'oferte_pret'), tNeg=sum(execs,'negocieri');
     const tPC=sum(plans,'prop')+sum(plans,'cumpar'), tEC=sum(execs,'prop')+sum(execs,'cumpar');
-    const tPPr=sum(plans,'oferte_prosp')+sum(plans,'prosp_dest'); // plan: hot prosp + NB prosp
+    const tPPr=sum(plans,'prosp_stab');  // plan: prosp stabilite NB (fara HOT)
+    const tPPs=sum(plans,'prosp_dest');  // plan: prosp de stabilit NB
     const tEPr=sum(execs,'prosp_real'), tEPs=sum(execs,'prosp_stab');
     const tPF=sum(plans,'fu_cumpar'), tEF=sum(execs,'fu_real');
 
@@ -922,10 +923,10 @@
     waText += `🤝 Negocieri: ${tNeg}\n`;
 
     waText += `\n📞 CONTACTE EFECTUATE\nPlanificat total: ${tPC}\nRealizat: ${tEC}\n${arrow(p(tEC,tPC))} Execuție: ${p(tEC,tPC)}%\n`;
-    waText += `\n👀 VIZIONĂRI\nRealizate: ${tEVr_total} / ${tPVe}\n${arrow(p(tEVr_total,tPVe))} ${p(tEVr_total,tPVe)}%\nStabilite: ${tEVs_total} / ${tPVs}\n${arrow(p(tEVs_total,tPVs))} ${p(tEVs_total,tPVs)}%\n`;
+    waText += `\n👀 VIZIONĂRI\nRealizate: ${tEVr} / ${tPVe}\n${arrow(p(tEVr,tPVe))} ${p(tEVr,tPVe)}%\nStabilite: ${tEVs} / ${tPVs}\n${arrow(p(tEVs,tPVs))} ${p(tEVs,tPVs)}%\n`;
 
-    const tPPstab=sum(plans,'prosp_stab');                          // deja stabilite dimineata
-    const tPPdest=sum(plans,'oferte_prosp')+sum(plans,'prosp_dest'); // de stabilit azi
+    const tPPstab=sum(plans,'prosp_stab');   // deja stabilite dimineata
+    const tPPdest=sum(plans,'prosp_dest');      // de stabilit azi (fara HOT)
     waText += `\n🏠 PROSPECTĂRI\nRealizate: ${tEPr} / ${tPPstab}\n${arrow(p(tEPr,tPPstab))} ${p(tEPr,tPPstab)}%\nStabilite: ${tEPs} / ${tPPdest}\n${arrow(p(tEPs,tPPdest))} ${p(tEPs,tPPdest)}%\n`;
 
     waText += `\n🔄 FOLLOW-UP CUMPĂRĂTORI\nRealizat: ${tEF} / ${tPF}\n${arrow(p(tEF,tPF))} ${p(tEF,tPF)}%\n`;
