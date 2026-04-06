@@ -1,16 +1,15 @@
-// BlitzReport Service Worker v3.0 — Web Push nativ
+// BlitzReport Service Worker v3.1
 const CACHE_NAME = 'blitzreport-v3';
-const ASSETS = ['/', '/index.html', '/manifest.json'];
+const ASSETS = ['/blitzflow/', '/blitzflow/index.html', '/blitzflow/manifest.json'];
 
-// Primeste notificari push cand aplicatia e INCHISA
 self.addEventListener('push', event => {
   let data = { title: 'BlitzReport', body: '' };
   try { data = event.data.json(); } catch(e) {}
   event.waitUntil(
     self.registration.showNotification(data.title || 'BlitzReport', {
       body: data.body || '',
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
+      icon: '/blitzflow/icon-192.png',
+      badge: '/blitzflow/icon-192.png',
       vibrate: [200, 100, 200],
       tag: 'blitzreport-notif',
       renotify: true
@@ -18,19 +17,18 @@ self.addEventListener('push', event => {
   );
 });
 
-// Click pe notificare — deschide aplicatia
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  event.waitUntil(clients.openWindow('/'));
+  event.waitUntil(clients.openWindow('/blitzflow/'));
 });
 
-// Install
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).catch(e => console.log('Cache error:', e))
+  );
   self.skipWaiting();
 });
 
-// Activate
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -40,7 +38,6 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Fetch
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   if (!event.request.url.startsWith(self.location.origin)) return;
@@ -53,7 +50,7 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
         return response;
-      }).catch(() => caches.match('/index.html'));
+      }).catch(() => caches.match('/blitzflow/index.html'));
     })
   );
 });
