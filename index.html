@@ -409,11 +409,14 @@
   const VAPID_KEY = 'BKRB-MC_CGajjfO9hs-opQ426Q9CjeYaH2J46_IORbUzUa-67kvw782trMOXSw-QgJmqw1mJDVK1bqRa99QoOw4';
   async function registerPushNotifications() {
     try {
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      if (!('serviceWorker' in navigator)) {
+        showToast('❌ ServiceWorker nu e suportat', '#ef4444'); return;
+      }
+      if (!('PushManager' in window)) {
+        showToast('❌ Push nu e suportat pe acest browser', '#ef4444'); return;
+      }
       const reg = await navigator.serviceWorker.ready;
-      // Convert VAPID key
       const vapidKey = urlBase64ToUint8Array(VAPID_KEY);
-      // Subscribe to push
       let sub = await reg.pushManager.getSubscription();
       if (!sub) {
         sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: vapidKey });
@@ -428,10 +431,13 @@
           name: brokerName,
           updatedAt: Date.now()
         });
-        console.log('Push subscription saved!');
+        showToast('🔔 Notificările sunt active!', '#22c55e');
+      } else {
+        showToast('⚠️ Nu s-a putut activa push', '#f59e0b');
       }
     } catch(e) {
-      console.log('Push registration skipped:', e.message);
+      showToast('❌ Push eroare: ' + e.message.substring(0, 50), '#ef4444');
+      console.log('Push error:', e);
     }
   }
 
