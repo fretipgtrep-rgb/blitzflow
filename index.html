@@ -606,7 +606,7 @@
 
     const d = { name, type, time: new Date().toLocaleTimeString('ro-RO',{hour:'2-digit',minute:'2-digit'}), date: todayStr() };
     if(type==='plan') Object.assign(d,{hot:gv('p_hot'),oferte_prosp:gv('p_oferte_prosp'),viz_stab:gv('p_viz_stab'),viz_ef:gv('p_viz_ef'),fin:gv('p_fin'),followup:gv('p_followup'),prop:gv('p_prop'),cumpar:gv('p_cumpar'),prosp_stab:gv('p_prosp_stab'),prosp_dest:gv('p_prosp_dest'),vizi_stab2:gv('p_vizi_stab2'),vizi_dest:gv('p_vizi_dest'),fu_cumpar:gv('p_fu_cumpar')});
-    else Object.assign(d,{hot_port:gv('e_hot_port'),hot_noi:gv('e_hot_noi'),avansat:gv('e_avansat'),viz_stab:gv('e_viz_stab'),viz_ef:gv('e_viz_ef'),fin:gv('e_fin'),oferte_pret:gv('e_oferte_pret'),negocieri:gv('e_negocieri'),prop:gv('e_prop'),cumpar:gv('e_cumpar'),prosp_real:gv('e_prosp_real'),prosp_stab:gv('e_prosp_stab'),viz_real:gv('e_viz_real'),viz_stab2:gv('e_viz_stab2'),fu_real:gv('e_fu_real')});
+    else Object.assign(d,{hot_port:gv('e_hot_port'),hot_noi:gv('e_hot_noi'),avansat:0,viz_stab:gv('e_viz_stab'),viz_ef:gv('e_viz_ef'),fin:gv('e_fin'),oferte_pret:gv('e_oferte_pret'),negocieri:gv('e_negocieri'),prop:gv('e_prop'),cumpar:gv('e_cumpar'),prosp_real:gv('e_prosp_real'),prosp_stab:gv('e_prosp_stab'),viz_real:gv('e_viz_real'),viz_stab2:gv('e_viz_stab2'),fu_real:gv('e_fu_real')});
 
     showLoading('Se trimite raportul...');
     const safeName = name.replace(/[^a-zA-Z0-9]/g,'_');
