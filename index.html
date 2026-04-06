@@ -2066,7 +2066,14 @@ Răspunde în română, concis și direct. Folosește emoji-uri relevante. Forma
 
 <script>
   if('serviceWorker' in navigator){
-    window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+    window.addEventListener('load', async () => {
+      try {
+        const reg = await navigator.serviceWorker.register('/blitzflow/sw.js', { scope: '/blitzflow/' });
+        console.log('SW registered:', reg.scope);
+      } catch(e) {
+        console.log('SW registration failed:', e.message);
+      }
+    });
   }
 </script>
 </body>
