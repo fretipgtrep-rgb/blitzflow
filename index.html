@@ -751,11 +751,11 @@
     if(plans.length>0 && execs.length>0) {
       const tPC=s(plans,'prop')+s(plans,'cumpar'),tEC=s(execs,'prop')+s(execs,'cumpar');
       const tPH=s(plans,'hot'),tEH=s(execs,'hot_port')+s(execs,'hot_noi');
-      // Vizionari: hot + New Business
-      const tPVe=s(plans,'viz_ef')+s(plans,'vizi_stab2');   // plan: de efectuat(hot) + stabilite(NB)
-      const tPVs=s(plans,'viz_stab')+s(plans,'vizi_dest');  // plan: de stabilit(hot) + dest(NB)
-      const tEVr=s(execs,'viz_ef')+s(execs,'viz_real');     // exec: efectuate(hot) + realizate(NB)
-      const tEVs=s(execs,'viz_stab')+s(execs,'viz_stab2');  // exec: stabilite(hot) + stabilite(NB)
+      // Vizionari NB only
+      const tPVe=s(plans,'vizi_stab2');   // plan viz de efectuat NB
+      const tPVs=s(plans,'vizi_dest');    // plan viz de stabilit NB
+      const tEVr=s(execs,'viz_real');     // viz realizate NB
+      const tEVs=s(execs,'viz_stab2');    // viz stabilite NB
       // Prospectari: oferte_prosp(hot) + prosp_dest(NB)
       // Prospectari: oferte_prosp(hot) + prosp_dest(NB) = total planificate
       const tPP=s(plans,'oferte_prosp')+s(plans,'prosp_dest'); // total prosp planificate
@@ -770,8 +770,8 @@
         ${rRow('👀 Viz. efectuate (hot)',s(execs,'viz_ef'),s(plans,'viz_ef'))}
         ${rRow('👀 Viz. stabilite (hot)',s(execs,'viz_stab'),s(plans,'viz_stab'))}
         <div class="sub-hdr" style="margin-top:6px;"><span class="sub-hdr-lbl">📋 New Business</span></div>
-        ${rRow('👀 Viz. realizate total',s(execs,'viz_ef')+s(execs,'viz_real'),tPVe)}
-        ${rRow('👀 Viz. stabilite total',s(execs,'viz_stab')+s(execs,'viz_stab2'),tPVs)}
+        ${rRow('👀 Viz. realizate (NB)',s(execs,'viz_real'),tPVe)}
+        ${rRow('👀 Viz. stabilite (NB)',s(execs,'viz_stab2'),tPVs)}
         <div class="report-row"><span class="rr-label">💰 Oferte de preț</span><span class="rr-exec">${tOp}</span></div>
         <div class="report-row"><span class="rr-label">🤝 Negocieri</span><span class="rr-exec">${tNeg}</span></div>
 
@@ -888,8 +888,8 @@
     const arrow=(pct)=>pct>=90?'✅':pct>=60?'➡️':'⚠️';
 
     const tPH=sum(plans,'hot'), tEH=sum(execs,'hot_port')+sum(execs,'hot_noi');
-    const tPVe=sum(plans,'viz_ef')+sum(plans,'vizi_stab2');   // plan: efectuat(hot) + stabilite(NB)
-    const tPVs=sum(plans,'viz_stab')+sum(plans,'vizi_dest');   // plan: stabilit(hot) + dest(NB)
+    const tPVe=sum(plans,'vizi_stab2');   // plan viz de efectuat NB
+    const tPVs=sum(plans,'vizi_dest');    // plan viz de stabilit NB
     const tEVr=sum(execs,'viz_ef')+sum(execs,'viz_real');      // exec: hot efectuate + NB realizate
     const tEVs=sum(execs,'viz_stab')+sum(execs,'viz_stab2');   // exec: hot stabilite + NB stabilite
     const tOp=sum(execs,'oferte_pret'), tNeg=sum(execs,'negocieri');
@@ -910,8 +910,8 @@
     const tEVr_hot=sum(execs,'viz_ef');   // viz efectuate hot
     const tEVs_hot=sum(execs,'viz_stab'); // viz stabilite hot
     // NEW BUSINESS - total (hot + NB)
-    const tEVr_total=sum(execs,'viz_ef')+sum(execs,'viz_real');     // viz realizate total
-    const tEVs_total=sum(execs,'viz_stab')+sum(execs,'viz_stab2');  // viz stabilite total
+    const tEVr_total=sum(execs,'viz_real');     // viz realizate NB (non-hot)
+    const tEVs_total=sum(execs,'viz_stab2');    // viz stabilite NB (non-hot)
     const tPVe_hot=sum(plans,'viz_ef');   // plan viz de efectuat hot
     const tPVs_hot=sum(plans,'viz_stab'); // plan viz de stabilit hot
 
@@ -1186,7 +1186,7 @@
       const intrPlan  = be.reduce((s,r)=>s+(r.prosp_stab||0),0);
       const intrReal  = be.reduce((s,r)=>s+(r.prosp_real||0),0);
       const vizPlan   = be.reduce((s,r)=>s+(r.viz_stab||0)+(r.viz_stab2||0),0); // total stabilite
-      const vizReal   = be.reduce((s,r)=>s+(r.viz_ef||0)+(r.viz_real||0),0);    // total realizate
+      const vizReal   = be.reduce((s,r)=>s+(r.viz_real||0),0);    // viz realizate NB only
       const neg       = be.reduce((s,r)=>s+(r.negocieri||0),0);
 
       // Add to team totals
@@ -1730,8 +1730,8 @@
       const be = execs.filter(r=>r.name===name);
       const prosp_real = be.reduce((s,r)=>s+(r.prosp_real||0),0);
       const prosp_stab = be.reduce((s,r)=>s+(r.prosp_stab||0),0);
-      const viz_real   = be.reduce((s,r)=>s+(r.viz_ef||0)+(r.viz_real||0),0);
-      const viz_stab   = be.reduce((s,r)=>s+(r.viz_stab||0)+(r.viz_stab2||0),0);
+      const viz_real   = be.reduce((s,r)=>s+(r.viz_real||0),0);    // NB only
+      const viz_stab   = be.reduce((s,r)=>s+(r.viz_stab2||0),0);  // NB only
       waText += `\n💠 ${name}\n`;
       waText += `🏠 Prospectări: ${prosp_real} realizate / ${prosp_stab} stabilite\n`;
       waText += `👀 Vizionări: ${viz_real} realizate / ${viz_stab} stabilite\n`;
