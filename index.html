@@ -264,7 +264,7 @@
   <div class="page-title">Raportare zilnică</div>
   <div class="page-subtitle">Completează în intervalul orar alocat</div>
   <div id="timeBanner"></div>
-  <button onclick="testPush()" style="width:100%;padding:10px;background:#4f46e5;color:#fff;border:none;border-radius:10px;font-weight:700;margin-bottom:10px;font-size:0.9rem;">🔔 Testează Notificările</button>
+  <button onclick="testPush()" id="pushBtn" style="width:100%;padding:10px;background:#4f46e5;color:#fff;border:none;border-radius:10px;font-weight:700;margin-bottom:10px;font-size:0.9rem;">🔔 Activează Notificările</button>
   <div id="pushStatus" style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;min-height:20px;"></div>
   <div class="window-tabs">
     <button class="window-tab" id="wtPlan" onclick="selectWindow('plan',this)">🌅 Planificare<span class="tab-badge" id="badgePlan"></span></button>
@@ -1509,8 +1509,10 @@
           name: name,
           updatedAt: Date.now()
         });
-        status.textContent = '✅ Succes! Notificările sunt active!';
+        status.textContent = '✅ Notificările sunt active!';
         status.style.color = '#22c55e';
+        const btn = document.getElementById('pushBtn');
+        if(btn) { btn.style.background = '#16a34a'; btn.textContent = '✅ Notificări active'; }
       } else {
         status.textContent = '❌ Nu s-a putut crea abonamentul';
         status.style.color = '#ef4444';
@@ -1520,6 +1522,22 @@
       status.style.color = '#ef4444';
     }
   };
+
+  // Verifica daca sunt notificarile deja active
+  async function checkPushStatus() {
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      const btn = document.getElementById('pushBtn');
+      const status = document.getElementById('pushStatus');
+      if (sub && btn) {
+        btn.style.background = '#16a34a';
+        btn.textContent = '✅ Notificări active';
+        if(status) { status.textContent = '✅ Notificările sunt active!'; status.style.color = '#22c55e'; }
+      }
+    } catch(e) {}
+  }
 
   // Init notificări broker — se apelează la încărcarea paginii
   async function initBrokerNotifications() {
@@ -1937,6 +1955,7 @@ Răspunde în română, concis și direct. Folosește emoji-uri relevante. Forma
   loadBrokersFromFirebase().then(() => checkAndAdvanceLuna());
   window.initBrokerPage();
   initBrokerNotifications();
+  setTimeout(checkPushStatus, 2000);
 
 </script>
 
