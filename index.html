@@ -583,7 +583,25 @@
     } else if(weekend) {
       html=`<div class="time-window-banner twb-closed"><span style="font-size:1.3rem">🔒</span><div><div class="twb-title">Duminică — Fără raportare</div><div class="twb-sub">Raportarea se reia luni la 06:00</div></div></div>`;
     } else if(h>=9 && h<17) {
-      html=`<div class="time-window-banner twb-closed"><span style="font-size:1.3rem">☕</span><div><div class="twb-title">Pauză între sesiuni</div><div class="twb-sub">Execuția se deschide la 17:00</div></div></div>`;
+      const motivMessages = [
+        { icon: '💪', msg: 'Fiecare apel dat azi e un pas spre target!' },
+        { icon: '🔥', msg: 'Concurența se odihnește. Tu nu.' },
+        { icon: '🎯', msg: 'Planul e făcut. Acum execută-l!' },
+        { icon: '🚀', msg: 'Ziua bună se face dimineața — tu ai planificat deja!' },
+        { icon: '😎', msg: 'Un broker bun nu așteaptă seara să fie mândru de zi.' },
+        { icon: '⚡', msg: 'Fiecare proprietar sunat azi e o ușă deschisă mâine.' },
+        { icon: '🏆', msg: 'Topul se face din zile ca asta. Dă tot!' },
+        { icon: '🌟', msg: 'Nu conta câți sunt mai buni. Fii mai bun ca ieri.' },
+        { icon: '💡', msg: 'Clienții nu vin singuri — dar tu știi asta deja!' },
+        { icon: '🎉', msg: 'Seara vei raporta o zi bună. Asigură-te acum!' },
+        { icon: '🦁', msg: 'Leii nu se plâng de vânat. Ei vânează.' },
+        { icon: '📈', msg: 'Fiecare NUuu primit azi te apropie de DA-ul de mâine.' },
+        { icon: '☕', msg: 'Cafeaua e băută. Telefonul e în mână. Ce mai aștepți?' },
+        { icon: '🎸', msg: 'Ziua aia bună nu vine singură — tu o construiești!' },
+      ];
+      const dayIdx = new Date().getDay() + new Date().getDate();
+      const m = motivMessages[dayIdx % motivMessages.length];
+      html=`<div class="time-window-banner twb-closed"><span style="font-size:1.3rem">${m.icon}</span><div><div class="twb-title">Pauză între sesiuni</div><div class="twb-sub">${m.msg}</div><div style="font-size:0.7rem;margin-top:2px;opacity:0.6;">Execuția se deschide la 17:00</div></div></div>`;
     } else {
       const next=h<6?'Planificarea se deschide la 06:00':'Planificarea se deschide mâine la 06:00';
       html=`<div class="time-window-banner twb-closed"><span style="font-size:1.3rem">🔒</span><div><div class="twb-title">Interval închis</div><div class="twb-sub">${next}</div></div></div>`;
