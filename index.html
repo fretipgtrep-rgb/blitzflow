@@ -199,6 +199,7 @@
     <div class="lock-sub">Introdu parola pentru dashboard</div>
     <input type="password" class="lock-input" id="lockInput" placeholder="••••" inputmode="numeric" pattern="[0-9]*" onkeydown="if(event.key==='Enter')checkPass()">
     <button class="lock-btn" onclick="checkPass()">Intră în Manager</button>
+    <button onclick="document.getElementById('lockScreen').style.display='none'; document.getElementById('tab-broker').click();" style="width:100%;padding:10px;background:transparent;color:var(--muted);border:none;border-radius:10px;font-family:DM Sans,sans-serif;font-size:0.85rem;cursor:pointer;margin-top:6px;">← Înapoi la Broker</button>
     <div class="lock-error" id="lockError">Parolă incorectă.</div>
   </div>
 </div>
