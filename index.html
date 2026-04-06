@@ -1731,12 +1731,12 @@
       const be = execs.filter(r=>r.name===name);
       const bp = plans.filter(r=>r.name===name);
       const prosp_real = be.reduce((s,r)=>s+(r.prosp_real||0),0);
-      const prosp_plan = bp.reduce((s,r)=>s+(r.prosp_stab||0)+(r.prosp_dest||0),0);
+      const prosp_stab = bp.reduce((s,r)=>s+(r.prosp_stab||0),0);
       const viz_real   = be.reduce((s,r)=>s+(r.viz_real||0),0);
-      const viz_plan   = bp.reduce((s,r)=>s+(r.vizi_stab2||0)+(r.vizi_dest||0),0);
+      const viz_stab   = bp.reduce((s,r)=>s+(r.vizi_stab2||0),0);
       waText += `\n💠 ${name}\n`;
-      waText += `🏠 Prospectări: ${prosp_real} realizate / ${prosp_plan} planificate\n`;
-      waText += `👀 Vizionări: ${viz_real} realizate / ${viz_plan} planificate\n`;
+      waText += `🏠 Prospectări: ${prosp_real} realizate / ${prosp_stab} stabilite\n`;
+      waText += `👀 Vizionări: ${viz_real} realizate / ${viz_stab} stabilite\n`;
     });
 
     waText += `\n${'─'.repeat(32)}\n📱 BlitzReport | Blitz Imobiliare`;
