@@ -3,8 +3,13 @@ const CACHE_NAME = 'blitzreport-v4';
 const ASSETS = ['/blitzflow/', '/blitzflow/index.html', '/blitzflow/manifest.json'];
 
 self.addEventListener('push', event => {
-  let data = { title: 'BlitzReport', body: '' };
-  try { data = event.data.json(); } catch(e) {}
+  let data = { title: '📊 BlitzReport', body: 'Ai un reminder nou!' };
+  try { 
+    if (event.data) {
+      const text = event.data.text();
+      if (text) data = JSON.parse(text);
+    }
+  } catch(e) {}
   event.waitUntil(
     self.registration.showNotification(data.title || 'BlitzReport', {
       body: data.body || '',
