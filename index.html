@@ -510,9 +510,19 @@
 
   // ── HELPERS ─────────────────────────────────────────────
   function todayKey() {
-    return new Date().toLocaleDateString('ro-RO').replace(/\./g,'-');
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2,'0');
+    const month = String(d.getMonth()+1).padStart(2,'0');
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
   }
-  function todayStr() { return new Date().toLocaleDateString('ro-RO'); }
+  function todayStr() {
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2,'0');
+    const month = String(d.getMonth()+1).padStart(2,'0');
+    const year = d.getFullYear();
+    return `${day}.${month}.${year}`;
+  }
   function getHour() { return new Date().getHours(); }
   window.getHour = getHour;
   window.isWeekend = function() { const d=new Date().getDay(); return d===0; } // doar duminica e weekend
@@ -935,7 +945,7 @@
 
     // Daily: show who hasn't reported
     if(period === 'zilnic') {
-      const missing=getBrokerNames().filter(b=>!execs.find(r=>r.name===b));
+      const missing=getBrokerNames().filter(b=>!execs.find(r=>nameMatch(r.name,b)));
       if(missing.length>0) waText+=`\n${'─'.repeat(32)}\n⚠️ NU AU RAPORTAT EXECUȚIA:\n${missing.map(m=>'• '+m).join('\n')}\n`;
     }
 
@@ -1012,6 +1022,15 @@
     ];
   };
   window.getBrokerNames = function() { return getBrokers().map(b=>typeof b==='string'?b:b.name); };
+  
+  // Normalizeaza numele - sterge diacritice pentru comparatie
+  function normName(n) {
+    return (n||'').toLowerCase()
+      .replace(/[ăâ]/g,'a').replace(/[îí]/g,'i').replace(/[șş]/g,'s')
+      .replace(/[țţ]/g,'t').replace(/ő/g,'o').replace(/ü/g,'u')
+      .replace(/\s+/g,' ').trim();
+  }
+  function nameMatch(a, b) { return normName(a) === normName(b); }
   window.getBrokerInfo = function(name) {
     const b = getBrokers().find(b=>(typeof b==='string'?b:b.name)===name);
     if (!b) return {name, dept:'Vanzari Ap. PF', luna:1};
@@ -1041,11 +1060,11 @@
       const init = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
       return `<div style="background:var(--surface2);border-radius:10px;padding:10px 12px;margin-bottom:4px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#1B4D3E,#0d2e25);display:flex;align-items:center;justify-content:center;font-family:Syne,sans-serif;font-weight:800;font-size:0.68rem;color:#fff;">${init}</div>
-            <span style="font-size:0.85rem;font-weight:600;">${name}</span>
+          <div style="display:flex;align-items:center;gap:8px;flex:1;">
+            <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#1B4D3E,#0d2e25);display:flex;align-items:center;justify-content:center;font-family:Syne,sans-serif;font-weight:800;font-size:0.68rem;color:#fff;flex-shrink:0;">${init}</div>
+            <input type="text" value="${name}" onchange="updateBrokerName(${i},this.value)" style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:7px;font-size:0.82rem;font-weight:600;outline:none;">
           </div>
-          <button onclick="removeBroker(${i})" style="background:transparent;border:none;color:var(--danger);cursor:pointer;font-size:0.9rem;padding:4px 8px;">🗑</button>
+          <button onclick="removeBroker(${i})" style="background:transparent;border:none;color:var(--danger);cursor:pointer;font-size:0.9rem;padding:4px 8px;flex-shrink:0;">🗑</button>
         </div>
         <div style="display:flex;gap:6px;">
           <select onchange="updateBrokerDept(${i},this.value)" style="flex:2;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:7px;font-size:0.75rem;outline:none;">
@@ -1076,6 +1095,12 @@
     window._editBrokers.splice(i,1);
     renderBrokerModal();
     showToast('🗑 '+name+' eliminat. Apasă Salvează.');
+  };
+  window.updateBrokerName = function(i, name){
+    if(!name.trim()) return;
+    if(!window._editBrokers) window._editBrokers = JSON.parse(JSON.stringify(getBrokers()));
+    if(typeof window._editBrokers[i]==='string') window._editBrokers[i] = { name: window._editBrokers[i], dept: 'Vanzari Ap. PF', luna: 1 };
+    window._editBrokers[i].name = name.trim();
   };
   window.updateBrokerDept = function(i, dept){
     if(!window._editBrokers) window._editBrokers = JSON.parse(JSON.stringify(getBrokers()));
@@ -1183,7 +1208,7 @@
       const std = STANDARDS[dept] ? STANDARDS[dept][lunaIdx] : null;
       if(!std) return;
 
-      const be = allExecs.filter(r=>r.name===name);
+      const be = allExecs.filter(r=>nameMatch(r.name,name));
       const convProsp = be.reduce((s,r)=>s+(r.prop||0),0);
       const convViz   = be.reduce((s,r)=>s+(r.cumpar||0),0);
       const intrPlan  = be.reduce((s,r)=>s+(r.prosp_stab||0),0);
@@ -1731,8 +1756,8 @@
     let waText = `📈 PROSPECTĂRI & VIZIONĂRI – PE BROKERI\n${periodEmoji} ${periodTitle} — ${periodLabel}\n${'─'.repeat(32)}\n`;
 
     getBrokerNames().forEach(name => {
-      const be = execs.filter(r=>r.name===name);
-      const bp = plans.filter(r=>r.name===name);
+      const be = execs.filter(r=>nameMatch(r.name,name));
+      const bp = plans.filter(r=>nameMatch(r.name,name));
       const prosp_real = be.reduce((s,r)=>s+(r.prosp_real||0),0);
       const prosp_stab = bp.reduce((s,r)=>s+(r.prosp_stab||0),0);
       const viz_real   = be.reduce((s,r)=>s+(r.viz_real||0),0);
