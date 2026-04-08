@@ -196,7 +196,13 @@
   <div class="lock-box">
     <div class="lock-icon">🔒</div>
     <div class="lock-title">Acces Manager</div>
-    <div class="lock-sub">Introdu parola pentru dashboard</div>
+    <div class="lock-sub">Selectează echipa și introdu parola</div>
+    <select id="teamSelect" style="width:100%;padding:10px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:9px;color:var(--text);font-size:0.9rem;outline:none;margin-bottom:10px;">
+      <option value="ionut">📊 Echipa Ionuț</option>
+      <option value="nicu">📊 Echipa Nicu</option>
+      <option value="erika">📊 Echipa Erika</option>
+      <option value="mihai">👑 Mihai (Owner)</option>
+    </select>
     <input type="password" class="lock-input" id="lockInput" placeholder="••••" inputmode="numeric" pattern="[0-9]*" onkeydown="if(event.key==='Enter')checkPass()">
     <button class="lock-btn" onclick="checkPass()">Intră în Manager</button>
     <button onclick="document.getElementById('lockScreen').style.display='none'; document.getElementById('tab-broker').click();" style="width:100%;padding:10px;background:transparent;color:var(--muted);border:none;border-radius:10px;font-family:DM Sans,sans-serif;font-size:0.85rem;cursor:pointer;margin-top:6px;">← Înapoi la Broker</button>
@@ -256,6 +262,7 @@
   <div class="nav-tabs">
     <button class="nav-tab active" id="tab-broker" onclick="showPage('broker',this)">📋 Broker</button>
     <button class="nav-tab" id="tab-manager" onclick="tryManager(this)">📊 Manager</button>
+    <button class="nav-tab" id="tab-owner" onclick="tryManager(this)" style="display:none;">👑 Owner</button>
   </div>
   <div class="time-badge" id="timeBadge">--:--</div>
 </nav>
@@ -350,7 +357,7 @@
 <div class="page" id="page-manager">
   <div class="manager-header">
     <div>
-      <div class="page-title">Dashboard Manager</div>
+      <div class="page-title" id="managerTitle">Dashboard Manager</div>
       <div class="page-subtitle" id="managerDate"></div>
     </div>
     <div class="manager-actions">
@@ -452,7 +459,14 @@
   }
 
   // ── GLOBALS ─────────────────────────────────────────────
-  const PASS = '0807';
+  // ── ECHIPE CONFIG ───────────────────────────────────────
+  const TEAMS = {
+    'ionut': { pass: '0807', label: 'Ionuț', dbKey: 'ionut' },
+    'nicu':  { pass: '0807', label: 'Nicu',  dbKey: 'nicu'  },
+    'erika': { pass: '0807', label: 'Erika', dbKey: 'erika' },
+    'mihai': { pass: '0807', label: 'Mihai (Owner)', dbKey: null, isOwner: true }
+  };
+  let activeTeam = 'ionut'; // echipa curenta logata
 
   // ── STANDARDE BLITZ ────────────────────────────────────
   const STANDARDS = {
@@ -509,6 +523,13 @@
   window.dbOnValue = onValue;
 
   // ── HELPERS ─────────────────────────────────────────────
+  // Returneaza calea Firebase pentru echipa activa
+  function teamPath() {
+    const team = TEAMS[activeTeam];
+    if (!team || team.isOwner) return 'reports/ionut'; // fallback
+    return `reports/${team.dbKey}`;
+  }
+
   function todayKey() {
     const d = new Date();
     const day = String(d.getDate()).padStart(2,'0');
@@ -551,7 +572,11 @@
 
   // ── LOCK ────────────────────────────────────────────────
   window.tryManager = function(btn) {
-    if (unlocked) { showPage('manager', btn); return; }
+    if (unlocked) {
+      const team = TEAMS[activeTeam];
+      showPage(team && team.isOwner ? 'owner' : 'manager', btn);
+      return;
+    }
     pendingTab = btn;
     document.getElementById('lockScreen').style.display = 'flex';
     document.getElementById('lockInput').value = '';
@@ -559,12 +584,21 @@
     setTimeout(()=>document.getElementById('lockInput').focus(), 100);
   };
   window.checkPass = function() {
-    if (document.getElementById('lockInput').value === PASS) {
+    const selectedTeam = document.getElementById('teamSelect').value;
+    const team = TEAMS[selectedTeam];
+    if (team && document.getElementById('lockInput').value === team.pass) {
       unlocked = true;
+      activeTeam = selectedTeam;
       document.getElementById('lockScreen').style.display = 'none';
-      showPage('manager', pendingTab);
+      // Update manager title
+      document.querySelector('.page-title') && (document.querySelector('#page-manager .page-title') || {textContent:''});
+      const team = TEAMS[activeTeam];
+      // Show/hide owner tab
+      document.getElementById('tab-owner').style.display = team && team.isOwner ? 'block' : 'none';
+      document.getElementById('tab-manager').style.display = team && team.isOwner ? 'none' : 'block';
+      showPage(team && team.isOwner ? 'owner' : 'manager', pendingTab);
       initManagerNotifications();
-      loadGeminiKeyFromFirebase(); // sync key across devices
+      loadGeminiKeyFromFirebase();
     } else {
       document.getElementById('lockError').style.display = 'block';
       document.getElementById('lockInput').value = '';
@@ -577,6 +611,7 @@
     document.getElementById('page-'+page).classList.add('active');
     if (btn) btn.classList.add('active');
     if (page==='manager') startLiveManager();
+    if (page==='owner') startOwnerDashboard();
     if (page==='broker') window.initBrokerPage();
   };
 
@@ -663,7 +698,7 @@
 
     showLoading('Se trimite raportul...');
     const safeName = name.replace(/[^a-zA-Z0-9]/g,'_');
-    const path = `reports/${todayKey()}/${safeName}_${type}`;
+    const path = `${teamPath()}/${todayKey()}/${safeName}_${type}`;
     try {
       await set(ref(db, path), d);
       hideLoading();
@@ -708,7 +743,9 @@
       ? new Date(parts[2], parts[1]-1, parts[0]).toLocaleDateString('ro-RO',{weekday:'long',year:'numeric',month:'long',day:'numeric'})
       : new Date().toLocaleDateString('ro-RO',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
     document.getElementById('managerDate').textContent = displayDate;
-    const todayRef = ref(db, `reports/${getActiveKey()}`);
+    const team = TEAMS[activeTeam];
+    document.getElementById('managerTitle').textContent = team ? `Dashboard — Echipa ${team.label}` : 'Dashboard Manager';
+    const todayRef = ref(db, `${teamPath()}/${getActiveKey()}`);
     if(unsubscribe) unsubscribe();
     showLoading('Se conectează live...');
     unsubscribe = onValue(todayRef, (snapshot) => {
@@ -838,7 +875,7 @@
   window.clearToday = async function() {
     showLoading('Se șterge...');
     try {
-      await remove(ref(db, `reports/${getActiveKey()}`));
+      await remove(ref(db, `${teamPath()}/${getActiveKey()}`));
       hideLoading();
       showToast('🗑 Rapoartele de azi au fost șterse','#6b7280');
     } catch(e) { hideLoading(); showToast('❌ Eroare la ștergere','#ef4444'); }
@@ -859,7 +896,7 @@
       reports = window._lastReports || [];
       periodLabel = todayStr();
     } else {
-      const snapshot = await window.dbGet(window.dbRef(window.DB, 'reports'));
+      const snapshot = await window.dbGet(window.dbRef(window.DB, teamPath()));
       const allData = snapshot.val() || {};
 
       let startDate, endDate;
@@ -1586,6 +1623,97 @@
     } catch(e) {}
   }
 
+  // ── OWNER DASHBOARD ────────────────────────────────────
+  let ownerDateKey = null;
+
+  window.changeOwnerDate = function(val) {
+    if (val === 'today' || !val) {
+      ownerDateKey = null;
+      const today = new Date();
+      document.getElementById('dateSelectorOwner').value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    } else {
+      const parts = val.split('-');
+      ownerDateKey = `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    startOwnerDashboard();
+  };
+
+  async function startOwnerDashboard() {
+    const dateKey = ownerDateKey || todayKey();
+    const today = new Date();
+    document.getElementById('ownerDate').textContent = new Date().toLocaleDateString('ro-RO',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    document.getElementById('dateSelectorOwner').value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+    const teamKeys = ['ionut', 'nicu', 'erika'];
+    const teamLabels = { ionut: 'Echipa Ionuț', nicu: 'Echipa Nicu', erika: 'Echipa Erika' };
+    
+    let html = '';
+    let totalReports = 0, totalContacte = 0, totalViz = 0;
+
+    for (const teamKey of teamKeys) {
+      try {
+        const snap = await window.dbGet(window.dbRef(window.DB, `reports/${teamKey}/${dateKey}`));
+        const data = snap.val() || {};
+        const reports = Object.values(data);
+        const plans = reports.filter(r=>r.type==='plan');
+        const execs = reports.filter(r=>r.type==='exec');
+        const sum = (arr,key) => arr.reduce((t,r)=>t+(+r[key]||0),0);
+        
+        const contacte = sum(execs,'prop') + sum(execs,'cumpar');
+        const viz = sum(execs,'viz_real');
+        const brokeriRaportat = [...new Set(reports.map(r=>r.name))];
+        
+        totalReports += reports.length;
+        totalContacte += contacte;
+        totalViz += viz;
+
+        html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;">
+          <div style="font-family:Syne,sans-serif;font-weight:800;font-size:0.95rem;margin-bottom:12px;color:var(--accent);">📊 ${teamLabels[teamKey]}</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;">
+            <div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center;">
+              <div style="font-size:1.4rem;font-weight:800;font-family:Syne,sans-serif;">${reports.length}</div>
+              <div style="font-size:0.7rem;color:var(--muted);">Rapoarte</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center;">
+              <div style="font-size:1.4rem;font-weight:800;font-family:Syne,sans-serif;">${contacte}</div>
+              <div style="font-size:0.7rem;color:var(--muted);">Contacte</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center;">
+              <div style="font-size:1.4rem;font-weight:800;font-family:Syne,sans-serif;">${viz}</div>
+              <div style="font-size:0.7rem;color:var(--muted);">Vizionări</div>
+            </div>
+          </div>
+          <div style="font-size:0.75rem;color:var(--muted);">Brokeri activi: ${brokeriRaportat.join(', ') || 'Niciun raport'}</div>
+        </div>`;
+      } catch(e) {
+        html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;">
+          <div style="font-family:Syne,sans-serif;font-weight:800;font-size:0.95rem;color:var(--muted);">📊 ${teamLabels[teamKey]} — Fără date</div>
+        </div>`;
+      }
+    }
+
+    // Sumar general
+    html = `<div style="background:linear-gradient(135deg,#1B4D3E22,#0d2e2522);border:1px solid #1B4D3E55;border-radius:14px;padding:16px;">
+      <div style="font-family:Syne,sans-serif;font-weight:800;font-size:0.95rem;margin-bottom:12px;color:#4ade80;">🏆 SUMAR GENERAL — TOATE ECHIPELE</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+        <div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:1.4rem;font-weight:800;font-family:Syne,sans-serif;">${totalReports}</div>
+          <div style="font-size:0.7rem;color:var(--muted);">Rapoarte totale</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:1.4rem;font-weight:800;font-family:Syne,sans-serif;">${totalContacte}</div>
+          <div style="font-size:0.7rem;color:var(--muted);">Contacte totale</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:1.4rem;font-weight:800;font-family:Syne,sans-serif;">${totalViz}</div>
+          <div style="font-size:0.7rem;color:var(--muted);">Vizionări totale</div>
+        </div>
+      </div>
+    </div>` + html;
+
+    document.getElementById('ownerContent').innerHTML = html;
+  }
+
   // Init notificări broker — se apelează la încărcarea paginii
   async function initBrokerNotifications() {
     const hasPermission = await requestNotifPermission();
@@ -1679,7 +1807,7 @@
 
     showLoading('Se salvează...');
     const safeName = name.replace(/[^a-zA-Z0-9]/g,'_');
-    const path = `reports/${dateKey}/${safeName}_${type}`;
+    const path = `${teamPath()}/${dateKey}/${safeName}_${type}`;
 
     try {
       await window.dbSet(window.dbRef(window.DB, path), d);
@@ -1711,7 +1839,7 @@
       reports = window._lastReports || [];
       periodLabel = todayStr();
     } else {
-      const snapshot = await window.dbGet(window.dbRef(window.DB, 'reports'));
+      const snapshot = await window.dbGet(window.dbRef(window.DB, teamPath()));
       const allData = snapshot.val() || {};
       let startDate, endDate;
 
@@ -2008,6 +2136,22 @@ Răspunde în română, concis și direct. Folosește emoji-uri relevante. Forma
 
 </script>
 
+
+<!-- OWNER PAGE -->
+<div class="page" id="page-owner">
+  <div class="manager-header">
+    <div>
+      <div class="page-title">👑 Dashboard Owner — Mihai</div>
+      <div class="page-subtitle" id="ownerDate"></div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;">
+    <span style="font-size:0.82rem;color:var(--muted);white-space:nowrap;">📅 Vizualizezi:</span>
+    <input type="date" id="dateSelectorOwner" style="background:var(--surface2);border:1.5px solid var(--border);color:var(--text);padding:7px 12px;border-radius:8px;font-family:DM Sans,sans-serif;font-size:0.85rem;outline:none;flex:1;" onchange="changeOwnerDate(this.value)">
+    <button onclick="changeOwnerDate('today')" style="padding:7px 12px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:0.75rem;font-weight:700;cursor:pointer;white-space:nowrap;">Azi</button>
+  </div>
+  <div id="ownerContent" style="display:flex;flex-direction:column;gap:16px;"></div>
+</div>
 
 <!-- SETTINGS MODAL -->
 <div class="modal-overlay" id="settingsModal" style="display:none;">
