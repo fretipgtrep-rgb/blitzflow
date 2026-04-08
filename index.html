@@ -2111,7 +2111,7 @@ Răspunde în română, concis și direct. Folosește emoji-uri relevante. Forma
   if('serviceWorker' in navigator){
     window.addEventListener('load', async () => {
       try {
-        const reg = await navigator.serviceWorker.register('/blitzflow/sw.js', { scope: '/blitzflow/' });
+        const reg = await navigator.serviceWorker.register('/blitzflow/sw.js?v=6', { scope: '/blitzflow/' });
         console.log('SW registered:', reg.scope);
       } catch(e) {
         console.log('SW registration failed:', e.message);
