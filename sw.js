@@ -1,5 +1,5 @@
 // BlitzReport Service Worker v6
-const CACHE_NAME = 'blitzreport-v6';
+const CACHE_NAME = 'blitzreport-v7';
 const ASSETS = ['/blitzflow/', '/blitzflow/index.html', '/blitzflow/manifest.json'];
 
 self.addEventListener('push', event => {
