@@ -373,6 +373,7 @@
       <button class="btn-secondary" onclick="openSettings()">⚙️</button>
       <button class="btn-danger" onclick="clearToday()">🗑 Azi</button>
       <button class="btn-action" onclick="openImportModal()" style="border-color:#60a5fa;color:#60a5fa;">📥 Import</button>
+      <button class="btn-action" onclick="migrateOldReports()" style="border-color:#f59e0b;color:#f59e0b;">🔄 Migrare date Ionuț</button>
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;">
@@ -563,6 +564,8 @@
 
   function showLoading(txt) { document.getElementById('loadingText').textContent=txt||'Se încarcă...'; document.getElementById('loadingOverlay').style.display='flex'; }
   function hideLoading() { document.getElementById('loadingOverlay').style.display='none'; }
+  window.showLoading = showLoading;
+  window.hideLoading = hideLoading;
 
   // ── CLOCK ───────────────────────────────────────────────
   function updateClock() {
@@ -2133,6 +2136,79 @@ Răspunde în română, concis și direct. Folosește emoji-uri relevante. Forma
   window.initBrokerPage();
   initBrokerNotifications();
   setTimeout(checkPushStatus, 2000);
+
+  // ── MIGRARE DATE VECHI → reports/ionut/ ──────────────────
+  window.migrateOldReports = async function() {
+    const SUBFOLDERS = ['ionut','nicu','erika'];
+
+    // Confirmare
+    if(!confirm(
+      '🔄 Migrare date vechi Ionuț\n\n' +
+      'Această operație va copia toate rapoartele aflate direct în\n' +
+      '"reports/" (de ex. 01-04-2025, 02-04-2025 etc.) în\n' +
+      '"reports/ionut/"\n\n' +
+      'Datele existente în reports/ionut/ NU vor fi suprascrise.\n' +
+      'Datele vechi rămân la locul lor (nu se șterg).\n\n' +
+      'Continuați?'
+    )) return;
+
+    showLoading('Se migrează datele vechi...');
+
+    try {
+      const snapshot = await window.dbGet(window.dbRef(window.DB, 'reports'));
+      const allData = snapshot.val();
+
+      if (!allData) {
+        hideLoading();
+        showToast('⚠️ Nu există date în reports/', '#f59e0b');
+        return;
+      }
+
+      // Filtrăm doar cheile care sunt date (dd-mm-yyyy), nu subfoldere de echipe
+      const dateKeys = Object.keys(allData).filter(k => !SUBFOLDERS.includes(k));
+
+      if (dateKeys.length === 0) {
+        hideLoading();
+        showToast('ℹ️ Nu există date vechi de migrat', '#6b7280');
+        return;
+      }
+
+      // Citim ce există deja în reports/ionut/ ca să nu suprascriem
+      const ionutSnap = await window.dbGet(window.dbRef(window.DB, 'reports/ionut'));
+      const ionutExisting = ionutSnap.val() || {};
+
+      let migrated = 0;
+      let skipped = 0;
+
+      for (const dateKey of dateKeys) {
+        if (ionutExisting[dateKey]) {
+          // Există deja la ionut — sărim peste
+          skipped++;
+          continue;
+        }
+        // Copiem întreaga zi în reports/ionut/{dateKey}
+        await window.dbSet(
+          window.dbRef(window.DB, `reports/ionut/${dateKey}`),
+          allData[dateKey]
+        );
+        migrated++;
+      }
+
+      hideLoading();
+
+      const msg = `✅ Migrare completă!\n\nMigrate: ${migrated} zile\nSărite (existau deja): ${skipped} zile\n\nDatele sunt acum în reports/ionut/`;
+      alert(msg);
+      showToast(`✅ ${migrated} zile migrate cu succes!`, '#22c55e');
+
+      // Reîncărcăm dashboardul
+      if(typeof loadManagerDashboard === 'function') loadManagerDashboard();
+
+    } catch(err) {
+      hideLoading();
+      console.error('Eroare migrare:', err);
+      showToast('❌ Eroare la migrare: ' + err.message, '#ef4444');
+    }
+  };
 
 </script>
 
