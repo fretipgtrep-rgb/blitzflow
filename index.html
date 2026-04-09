@@ -785,7 +785,7 @@
 
     // STATUS GRID
     document.getElementById('statusGrid').innerHTML = brokerList.map(name=>{
-      const st=byName[name]||{};
+      const st=byName[normName(name)]||{};
       const init=name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
       const hasPlan=!!st.plan, hasExec=!!st.exec;
       const avCls=(hasPlan||hasExec)?'av-ok':'av-missing';
