@@ -1830,13 +1830,21 @@
   window.openBrokeriModal = async function(period) {
     showLoading('Se generează raportul brokeri...');
 
-    const now = new Date();
+    // Folosim data selectata in calendar, nu neaparat azi
+    const activeKey = getActiveKey(); // format: DD-MM-YYYY
+    const activeParts = activeKey.split('-');
+    const now = new Date(parseInt(activeParts[2]), parseInt(activeParts[1])-1, parseInt(activeParts[0]), 12, 0, 0);
+
     let reports = [];
     let periodLabel = '';
 
     if(period === 'zilnic') {
-      reports = window._lastReports || [];
-      periodLabel = todayStr();
+      // Citim din Firebase data activa (nu doar din memorie)
+      const snapshot = await window.dbGet(window.dbRef(window.DB, `${teamPath()}/${activeKey}`));
+      const dayData = snapshot.val() || {};
+      reports = Object.values(dayData);
+      // Formatam data pentru label
+      periodLabel = `${activeParts[0]}.${activeParts[1]}.${activeParts[2]}`;
     } else {
       const snapshot = await window.dbGet(window.dbRef(window.DB, teamPath()));
       const allData = snapshot.val() || {};
