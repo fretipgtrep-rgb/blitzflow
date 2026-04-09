@@ -781,7 +781,7 @@
 
     const brokerList = getBrokerNames();
     const byName = {};
-    reports.forEach(r=>{ if(!byName[r.name])byName[r.name]={}; byName[r.name][r.type]=r; });
+    reports.forEach(r=>{ const k=normName(r.name); if(!byName[k])byName[k]={}; byName[k][r.type]=r; });
 
     // STATUS GRID
     document.getElementById('statusGrid').innerHTML = brokerList.map(name=>{
@@ -842,7 +842,7 @@
     list.innerHTML=`<div class="section-label">👤 Rapoarte Individuale</div>`+reports.map((r,i)=>{
       const init=r.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
       const isPlan=r.type==='plan';const bid=`bd_${i}`;
-      const plan=byName[r.name]?.plan;
+      const plan=byName[normName(r.name)]?.plan;
       const pb=(e,p)=>calcPct(e,p);
       const bdg=(p,exec)=>{if(p===null)return '';const lbl=pctLbl(p,exec);return `<span style="font-size:0.6rem;font-weight:700;padding:1px 4px;border-radius:6px;" class="rr-pct ${pctCls(p)}">${lbl}</span>`;};
       let fields='';
@@ -1061,14 +1061,16 @@
   
   // Normalizeaza numele - sterge diacritice pentru comparatie
   function normName(n) {
-    return (n||'').toLowerCase()
-      .replace(/[ăâ]/g,'a').replace(/[îí]/g,'i').replace(/[șş]/g,'s')
-      .replace(/[țţ]/g,'t').replace(/ő/g,'o').replace(/ü/g,'u')
+    return (n||'').normalize('NFD')        // descompune diacriticele (e.g. ă → a + combining)
+      .replace(/[\u0300-\u036f]/g,'')    // sterge toate combining marks
+      .toLowerCase()
+      .replace(/[șş]/g,'s')               // ș cu virgula vs cedila (nu se descompun prin NFD)
+      .replace(/[țţ]/g,'t')               // idem ț
       .replace(/\s+/g,' ').trim();
   }
   function nameMatch(a, b) { return normName(a) === normName(b); }
   window.getBrokerInfo = function(name) {
-    const b = getBrokers().find(b=>(typeof b==='string'?b:b.name)===name);
+    const b = getBrokers().find(b=>nameMatch((typeof b==='string'?b:b.name), name));
     if (!b) return {name, dept:'Vanzari Ap. PF', luna:1};
     if (typeof b==='string') return {name:b, dept:'Vanzari Ap. PF', luna:1};
     return b;
@@ -1119,7 +1121,7 @@
     if(!name)return;
     if(name.split(' ').length<2){input.style.borderColor='var(--danger)';setTimeout(()=>input.style.borderColor='',2000);showToast('Introdu Nume și Prenume!','#ef4444');return;}
     if(!window._editBrokers) window._editBrokers = JSON.parse(JSON.stringify(getBrokers()));
-    if(window._editBrokers.find(b=>(typeof b==='string'?b:b.name)===name)){showToast('Brokerul există deja!','#f59e0b');return;}
+    if(window._editBrokers.find(b=>nameMatch((typeof b==='string'?b:b.name),name))){showToast('Brokerul există deja!','#f59e0b');return;}
     window._editBrokers.push({name, dept:'Vanzari Ap. PF', luna:1});
     input.value='';
     renderBrokerModal();
