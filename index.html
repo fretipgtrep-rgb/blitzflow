@@ -2080,7 +2080,7 @@ ${reportText}${contextEchipa}${historicCtx}
 
 Reguli STRICTE:
 - Română, ton direct și scurt
-- MAXIM 45 de cuvinte total
+- MAXIM 75 de cuvinte total
 - ${eInceputLuna ? 'Suntem la început de lună – NU compara cu luna trecută, e prea devreme. Comentează doar ziua.' : 'Compară față de ținta proporțională a lunii.'}
 - ${eInceputSaptamana ? 'Început de săptămână – fii motivant, nu critic.' : ''}
 - ${eFinSaptamana ? 'Sfârșit de săptămână – oferă 1-2 recomandări specifice per broker pentru săptămâna viitoare (ex: X să se concentreze pe vizionări, Y pe prospectări).' : 'Nu da recomandări de perspectivă, doar feedback pe ziua de azi.'}
@@ -2145,7 +2145,7 @@ ${reportText}${contextStd}${historicCtxStd}
 
 Reguli STRICTE:
 - Română, ton direct
-- MAXIM 45 de cuvinte total
+- MAXIM 75 de cuvinte total
 - ${eil2 ? 'Început de lună – evaluează doar ziua curentă față de standard zilnic, nu luna.' : 'Compară față de ținta proporțională a lunii.'}
 - ${eFinSapt2 ? 'Sfârșit de săptămână – adaugă recomandări specifice per broker pentru săptămâna viitoare.' : 'Feedback doar pe perioada curentă.'}
 
@@ -2221,9 +2221,14 @@ Format: 📊 [față de standard] | ⭐ [peste] | ⚠️ [sub standard sau absen
 
     const allBrokersBk = getBrokerNames();
     const reportedBk = (window._waBrokeriText||'').split('\n').filter(l=>l.startsWith('💠')).map(l=>l.replace('💠','').trim());
-    const neraportatiBk = allBrokersBk.filter(n=>!reportedBk.some(r=>nameMatch(r,n)));
-    const contextBk = neraportatiBk.length ? `\nFără activitate în perioadă: ${neraportatiBk.join(', ')}` : '';
-    const { ctx: historicCtxBk, eInceputLuna: eil3, eInceputSaptamana: eis3, dow: dow3 } = await buildHistoricalContext();
+    const execReportsBk = window._lastReports ? window._lastReports.filter(r=>r.type==='exec') : [];
+    const neraportatiBk = allBrokersBk.filter(n=>!execReportsBk.some(r=>nameMatch(r.name,n)));
+    const contextBk = neraportatiBk.length ? `\nFără raport execuție azi: ${neraportatiBk.join(', ')}` : '\nToți au raportat.';
+    let historicCtxBk = '', eil3 = false, eis3 = false, dow3 = new Date().getDay();
+    try {
+      const hist = await buildHistoricalContext();
+      historicCtxBk = hist.ctx; eil3 = hist.eInceputLuna; eis3 = hist.eInceputSaptamana; dow3 = hist.dow;
+    } catch(he) { console.warn('Historic ctx error:', he); }
     const eFinSapt3 = dow3 >= 4;
     const prompt = `Ești directorul de vânzări la Blitz Imobiliare. Analizează activitatea de prospectări și vizionări a brokerilor.
 IMPORTANT: Folosește DOAR termenii: "prospectări" și "vizionări" (niciodată "viziuni").
@@ -2234,7 +2239,7 @@ ${reportText}${contextBk}${historicCtxBk}
 
 Reguli STRICTE:
 - Română, ton direct și concis
-- MAXIM 45 de cuvinte total
+- MAXIM 75 de cuvinte total
 - ${eil3 ? 'Început de lună – nu compara cu luna trecută. Comentează doar activitatea din perioadă.' : 'Compară față de ținta proporțională și luna precedentă.'}
 - ${eFinSapt3 ? 'Sfârșit de săptămână – oferă recomandări SPECIFICE per broker (ex: "X să facă mai multe vizionări săptămâna viitoare", "Y să se concentreze pe prospectări").' : 'Nu da recomandări de viitor, doar feedback pe perioada selectată.'}
 - Identifică tendințe reale (slab constant vs excepție)
