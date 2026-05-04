@@ -1936,30 +1936,51 @@
 
 
   // ── CONTEXT ISTORIC PENTRU GEMINI ───────────────────────────
+  // Standard lunar per broker (conform Blitz Imobiliare)
+  const STANDARD_LUNAR = { prosp: 10, viz: 19 };
+
   async function buildHistoricalContext() {
     try {
       const snapshot = await window.dbGet(window.dbRef(window.DB, teamPath()));
       const allData = snapshot.val() || {};
       const brokers = getBrokerNames();
       const today = new Date();
+      today.setHours(12,0,0,0);
 
-      // Calculam perioada: saptamana curenta + precedenta (14 zile)
-      const twoWeeksAgo = new Date(today);
-      twoWeeksAgo.setDate(today.getDate() - 14);
-
-      // Calculam luna curenta si precedenta
+      // Zile lucratoare scurse in luna curenta (exclusiv weekend)
       const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-      const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-      const lastMonthEnd   = new Date(today.getFullYear(), today.getMonth(), 0);
+      let zileLucratoareScurse = 0;
+      let zileLucratoareLuna = 0;
+      const totalZileLuna = new Date(today.getFullYear(), today.getMonth()+1, 0).getDate();
+      for(let i=1; i<=totalZileLuna; i++){
+        const dw = new Date(today.getFullYear(), today.getMonth(), i).getDay();
+        if(dw!==0 && dw!==6) {
+          zileLucratoareLuna++;
+          if(i <= today.getDate()) zileLucratoareScurse++;
+        }
+      }
+      const fractiuneLuna = zileLucratoareScurse / (zileLucratoareLuna || 1);
+      const eInceputLuna = zileLucratoareScurse <= 3; // primele 3 zile lucratoare
 
-      // Agregam date per broker pe saptamana curenta si luna curenta/precedenta
+      // Saptamana curenta (Luni-azi)
+      const dow = today.getDay() === 0 ? 7 : today.getDay();
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - dow + 1);
+      weekStart.setHours(0,0,0,0);
+      const eInceputSaptamana = dow <= 2; // Luni sau Marti
+
+      // Luna precedenta
+      const lastMonthStart = new Date(today.getFullYear(), today.getMonth()-1, 1);
+      const lastMonthEnd   = new Date(today.getFullYear(), today.getMonth(), 0);
+      lastMonthEnd.setHours(23,59,59,999);
+
       const statsBroker = {};
       brokers.forEach(n => {
         statsBroker[normName(n)] = {
           name: n,
-          week:  { zile:0, prosp_real:0, prosp_stab:0, viz_real:0, viz_stab:0 },
-          month: { zile:0, prosp_real:0, prosp_stab:0, viz_real:0, viz_stab:0 },
-          lastMonth: { zile:0, prosp_real:0, prosp_stab:0, viz_real:0, viz_stab:0 },
+          week:      { zile:0, prosp_real:0, viz_real:0, viz_stab:0 },
+          month:     { zile:0, prosp_real:0, viz_real:0, viz_stab:0 },
+          lastMonth: { zile:0, prosp_real:0, viz_real:0, viz_stab:0 },
         };
       });
 
@@ -1967,7 +1988,7 @@
         const p = dateKey.split('-');
         if(p.length !== 3) return;
         const d = new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0]), 12,0,0);
-        const inWeek  = d >= twoWeeksAgo && d <= today;
+        const inWeek  = d >= weekStart && d <= today;
         const inMonth = d >= thisMonthStart && d <= today;
         const inLastM = d >= lastMonthStart && d <= lastMonthEnd;
         if(!inWeek && !inMonth && !inLastM) return;
@@ -1976,12 +1997,11 @@
           if(r.type !== 'exec') return;
           const key = normName(r.name);
           if(!statsBroker[key]) return;
-          const add = (bucket) => {
-            bucket.zile++;
-            bucket.prosp_real += r.prosp_real||0;
-            bucket.prosp_stab += r.prosp_stab||0;
-            bucket.viz_real   += r.viz_real||0;
-            bucket.viz_stab   += r.viz_stab2||0;
+          const add = (b) => {
+            b.zile++;
+            b.prosp_real += r.prosp_real||0;
+            b.viz_real   += r.viz_real||0;
+            b.viz_stab   += r.viz_stab2||0;
           };
           if(inWeek)  add(statsBroker[key].week);
           if(inMonth) add(statsBroker[key].month);
@@ -1989,28 +2009,39 @@
         });
       });
 
-      // Construim textul de context
-      let ctx = `\n\n━━━ CONTEXT ISTORIC ECHIPĂ (din Firebase) ━━━\n`;
-      ctx += `Perioada analizată: ultimele 2 săptămâni + luna curentă vs luna precedentă\n\n`;
+      // Construim contextul
+      const luna = today.toLocaleDateString('ro-RO',{month:'long', year:'numeric'});
+      const saptamana = `${weekStart.toLocaleDateString('ro-RO')} – ${today.toLocaleDateString('ro-RO')}`;
+
+      let ctx = `\n\n━━━ DATE COMPLETE DIN APLICAȚIE ━━━`;
+      ctx += `\nData curentă: ${today.toLocaleDateString('ro-RO')} (${zileLucratoareScurse} zile lucr. scurse din ${zileLucratoareLuna} ale lunii ${luna})`;
+      ctx += `\nStandard lunar per broker: ${STANDARD_LUNAR.prosp} prospectări | ${STANDARD_LUNAR.viz} vizionări`;
+      ctx += `\nAtenție: ${eInceputLuna ? 'SUNTEM LA ÎNCEPUTUL LUNII – nu compara cu luna precedentă, e prea devreme!' : `luna e avansată ${Math.round(fractiuneLuna*100)}%, compară proporțional.`}`;
+      ctx += `\nSăptămâna curentă: ${saptamana}${eInceputSaptamana ? ' (ÎNCEPUT DE SĂPTĂMÂNĂ – nu trage concluzii negative)' : ''}\n`;
 
       brokers.forEach(n => {
         const s = statsBroker[normName(n)];
         if(!s) return;
         const w = s.week, m = s.month, lm = s.lastMonth;
-        ctx += `👤 ${n}\n`;
-        ctx += `  Ultimele 14 zile: ${w.zile} zile raportate | Prosp: ${w.prosp_real} ef/${w.prosp_stab} stab | Viz: ${w.viz_real} ef/${w.viz_stab} stab\n`;
-        ctx += `  Luna curentă:     ${m.zile} zile raportate | Prosp: ${m.prosp_real} ef/${m.prosp_stab} stab | Viz: ${m.viz_real} ef/${m.viz_stab} stab\n`;
-        ctx += `  Luna precedentă:  ${lm.zile} zile raportate | Prosp: ${lm.prosp_real} ef/${lm.prosp_stab} stab | Viz: ${lm.viz_real} ef/${lm.viz_stab} stab\n`;
-        if(w.zile === 0) ctx += `  ⚠️ ZERO rapoarte în ultimele 2 săptămâni!\n`;
-        else if(lm.zile > 0 && m.prosp_real < lm.prosp_real * 0.5)
-          ctx += `  📉 Prospectări luna curentă mult sub luna precedentă!\n`;
+        // Progres proportional fata de standard
+        const prospTarget = Math.round(STANDARD_LUNAR.prosp * fractiuneLuna);
+        const vizTarget   = Math.round(STANDARD_LUNAR.viz   * fractiuneLuna);
+        const prospPct = prospTarget > 0 ? Math.round(m.prosp_real/prospTarget*100) : null;
+        const vizPct   = vizTarget   > 0 ? Math.round(m.viz_real/vizTarget*100)     : null;
+
+        ctx += `\n👤 ${n}`;
+        ctx += `\n  Săptămâna curentă: ${w.zile} zile | Prosp: ${w.prosp_real} | Vizionări efectuate: ${w.viz_real} / stabilite: ${w.viz_stab}`;
+        ctx += `\n  Luna ${luna}: ${m.zile} zile | Prosp: ${m.prosp_real}${prospPct!==null&&!eInceputLuna?' ('+prospPct+'% din ținta proporțională)':''} | Vizionări: ${m.viz_real}${vizPct!==null&&!eInceputLuna?' ('+vizPct+'% din ținta proporțională)':''}`;
+        ctx += `\n  Luna precedentă: ${lm.zile} zile | Prosp: ${lm.prosp_real} | Vizionări: ${lm.viz_real}`;
+        if(m.zile === 0 && !eInceputLuna) ctx += `\n  ⚠️ Nicio zi raportată luna aceasta!`;
+        if(w.zile === 0 && !eInceputSaptamana) ctx += `\n  ⚠️ Nicio zi raportată săptămâna aceasta!`;
       });
 
-      ctx += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
-      return ctx;
+      ctx += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+      return { ctx, eInceputLuna, eInceputSaptamana, fractiuneLuna, zileLucratoareScurse, dow };
     } catch(e) {
       console.error('buildHistoricalContext error:', e);
-      return '';
+      return { ctx:'', eInceputLuna:false, eInceputSaptamana:false, fractiuneLuna:1, zileLucratoareScurse:20, dow:5 };
     }
   }
 
@@ -2036,26 +2067,25 @@
     const allBrokers = getBrokerNames();
     const reportedNames = (window._waBrokeriText||'').split('\n').filter(l=>l.startsWith('💠')).map(l=>l.replace('💠','').trim());
     const neraportati = allBrokers.filter(n=>!reportedNames.some(r=>nameMatch(r,n)));
-    const contextEchipa = neraportati.length ? `\nBrokeri care NU au raportat azi: ${neraportati.join(', ')}` : '\nToți brokerii au raportat azi.';
-    const historicCtx = await buildHistoricalContext();
-    const prompt = `Ești directorul de vânzări la Blitz Imobiliare. Analizează raportul zilei ȘI istoricul echipei din ultimele săptămâni.
+    const contextEchipa = neraportati.length ? `\nBrokeri fără raport azi: ${neraportati.join(', ')}` : '\nToți brokerii au raportat azi.';
+    const { ctx: historicCtx, eInceputLuna, eInceputSaptamana, dow } = await buildHistoricalContext();
+    const eFinSaptamana = dow >= 4; // Joi sau Vineri = recomandari de perspectiva
+    const prompt = `Ești directorul de vânzări la Blitz Imobiliare. Analizează raportul zilei.
+IMPORTANT: Folosește DOAR termenii: "prospectări" și "vizionări" (niciodată "viziuni" sau alte variante).
+Standard lunar per broker: 10 prospectări realizate, 19 vizionări realizate.
 
-Raport echipă AZI:
+Raport AZI:
 ${reportText}${contextEchipa}${historicCtx}
 
-Reguli răspuns:
-- Limbă: română
-- Ton: direct, profesionist, motivant
-- Lungime: maxim 150 cuvinte total
-- Folosește datele istorice pentru a identifica tendințe (ex: cineva cu activitate în scădere față de luna trecută)
-- Mustră explicit brokerii care nu au raportat sau au activitate slabă constant
-- Laudă cu cifre concrete pe performeri
+Reguli STRICTE:
+- Română, ton direct și scurt
+- MAXIM 45 de cuvinte total
+- ${eInceputLuna ? 'Suntem la început de lună – NU compara cu luna trecută, e prea devreme. Comentează doar ziua.' : 'Compară față de ținta proporțională a lunii.'}
+- ${eInceputSaptamana ? 'Început de săptămână – fii motivant, nu critic.' : ''}
+- ${eFinSaptamana ? 'Sfârșit de săptămână – oferă 1-2 recomandări specifice per broker pentru săptămâna viitoare (ex: X să se concentreze pe vizionări, Y pe prospectări).' : 'Nu da recomandări de perspectivă, doar feedback pe ziua de azi.'}
+- Mustră pe nume cei fără raport
 
-Format strict:
-📊 [1-2 propoziții despre performanța zilei + trend față de perioadele anterioare]
-⭐ BINE: [nume + cifre relevante]
-⚠️ ATENȚIE: [nume + problemă specifică din istoric sau neraportare]
-💡 [1-2 acțiuni concrete pentru mâine bazate pe tendințe]`;
+Format: 📊 [ziua] | ⭐ [bine] | ⚠️ [atenție] ${eFinSaptamana ? '| 🎯 [recomandări săptămâna viitoare per broker]' : ''}`;
 
     try {
       const response = await fetch(
@@ -2104,26 +2134,23 @@ Format strict:
       const reps = (window._waStdText||'');
       return !reps.includes(n) && !reps.includes(normName(n));
     });
-    const contextStd = neraportatiStd.length ? `\nBrokeri care NU au raportat: ${neraportatiStd.join(', ')}` : '\nToți brokerii au raportat.';
-    const historicCtxStd = await buildHistoricalContext();
-    const prompt = `Ești directorul de vânzări la Blitz Imobiliare. Analizează performanța față de standard ȘI tendințele din ultimele săptămâni/luni.
+    const contextStd = neraportatiStd.length ? `\nFără raport: ${neraportatiStd.join(', ')}` : '\nToți au raportat.';
+    const { ctx: historicCtxStd, eInceputLuna: eil2, eInceputSaptamana: eis2, dow: dow2 } = await buildHistoricalContext();
+    const eFinSapt2 = dow2 >= 4;
+    const prompt = `Ești directorul de vânzări la Blitz Imobiliare. Analizează performanța față de standardul zilnic Blitz.
+IMPORTANT: Folosește DOAR termenii: "prospectări" și "vizionări" (niciodată "viziuni").
+Standard lunar: 10 prospectări realizate, 19 vizionări realizate per broker.
 
 Raport vs Standard:
 ${reportText}${contextStd}${historicCtxStd}
 
-Reguli răspuns:
-- Limbă: română
-- Ton: direct, exigent, constructiv
-- Lungime: maxim 150 cuvinte total
-- Compară cifrele reale cu standardul și cu istoricul (luna trecută vs curentă)
-- Identifică brokeri cu tendință negativă susținută și menționează-i explicit
-- Mustră brokerii care nu au raportat
+Reguli STRICTE:
+- Română, ton direct
+- MAXIM 45 de cuvinte total
+- ${eil2 ? 'Început de lună – evaluează doar ziua curentă față de standard zilnic, nu luna.' : 'Compară față de ținta proporțională a lunii.'}
+- ${eFinSapt2 ? 'Sfârșit de săptămână – adaugă recomandări specifice per broker pentru săptămâna viitoare.' : 'Feedback doar pe perioada curentă.'}
 
-Format strict:
-📊 [evaluare generală față de standard + trend față de luna precedentă]
-⭐ PESTE STANDARD: [nume + cifre + trend]
-⚠️ SUB STANDARD: [nume + ce lipsește + dacă e tendință sau excepție]
-💡 [1-2 acțiuni concrete bazate pe tendințele observate]`;
+Format: 📊 [față de standard] | ⭐ [peste] | ⚠️ [sub standard sau absent] ${eFinSapt2 ? '| 🎯 [recomandări specifice per broker]' : ''}`;
 
     try {
       const response = await fetch(
@@ -2195,26 +2222,24 @@ Format strict:
     const allBrokersBk = getBrokerNames();
     const reportedBk = (window._waBrokeriText||'').split('\n').filter(l=>l.startsWith('💠')).map(l=>l.replace('💠','').trim());
     const neraportatiBk = allBrokersBk.filter(n=>!reportedBk.some(r=>nameMatch(r,n)));
-    const contextBk = neraportatiBk.length ? `\nBrokeri fără activitate în această perioadă: ${neraportatiBk.join(', ')}` : '\nToți brokerii au activitate în perioadă.';
-    const historicCtxBk = await buildHistoricalContext();
-    const prompt = `Ești directorul de vânzări la Blitz Imobiliare. Analizează prospectările și vizionările brokerilor ȘI tendințele lor din ultimele săptămâni.
+    const contextBk = neraportatiBk.length ? `\nFără activitate în perioadă: ${neraportatiBk.join(', ')}` : '';
+    const { ctx: historicCtxBk, eInceputLuna: eil3, eInceputSaptamana: eis3, dow: dow3 } = await buildHistoricalContext();
+    const eFinSapt3 = dow3 >= 4;
+    const prompt = `Ești directorul de vânzări la Blitz Imobiliare. Analizează activitatea de prospectări și vizionări a brokerilor.
+IMPORTANT: Folosește DOAR termenii: "prospectări" și "vizionări" (niciodată "viziuni").
+Standard lunar: 10 prospectări realizate, 19 vizionări realizate per broker.
 
-Raport individual brokeri (perioada selectată):
+Raport brokeri (${eInceputLuna ? 'început de lună' : 'perioada selectată'}):
 ${reportText}${contextBk}${historicCtxBk}
 
-Reguli răspuns:
-- Limbă: română
-- Ton: direct, motivant, ferm
-- Lungime: maxim 150 cuvinte total
-- Folosește istoricul pentru a identifica cine are activitate în scădere față de luna trecută
-- Recomandă acțiuni specifice pentru brokerii cu activitate slabă constantă
-- Nu repeta datele brute, oferă interpretare și direcție clară
+Reguli STRICTE:
+- Română, ton direct și concis
+- MAXIM 45 de cuvinte total
+- ${eil3 ? 'Început de lună – nu compara cu luna trecută. Comentează doar activitatea din perioadă.' : 'Compară față de ținta proporțională și luna precedentă.'}
+- ${eFinSapt3 ? 'Sfârșit de săptămână – oferă recomandări SPECIFICE per broker (ex: "X să facă mai multe vizionări săptămâna viitoare", "Y să se concentreze pe prospectări").' : 'Nu da recomandări de viitor, doar feedback pe perioada selectată.'}
+- Identifică tendințe reale (slab constant vs excepție)
 
-Format strict:
-📊 [1 propoziție despre nivelul general de prospectare/vizionări + comparație cu luna precedentă]
-⭐ TOP: [broker + cifră + trend pozitiv dacă există]
-⚠️ TREBUIE MAI MULT: [brokeri în scădere sau inactivi + recomandare specifică]
-💡 [1 acțiune concretă pentru toată echipa bazată pe tendințe]`;
+Format: 📊 [general] | ⭐ [top] | ⚠️ [slab/absent] ${eFinSapt3 ? '| 🎯 [recomandări specifice per broker pentru săptămâna viitoare]' : ''}`;
 
     try {
       const response = await fetch(
