@@ -1920,6 +1920,10 @@
     document.getElementById('waBrokeriPreview').textContent = waText;
     document.getElementById('waBrokeriModalSub').textContent = `${periodEmoji} ${periodTitle} — ${periodLabel}`;
     document.getElementById('waBrokeriModal').style.display = 'flex';
+
+    // Precalculam istoricul in fundal - gata cand utilizatorul apasa Gemini
+    window._brokerHistoric = null;
+    buildHistoricalContext().then(h => { window._brokerHistoric = h; }).catch(()=>{});
   };
 
   window.sendBrokeriToWa = function() {
@@ -2220,31 +2224,34 @@ Format: 📊 [față de standard] | ⭐ [peste] | ⚠️ [sub standard sau absen
     result.textContent = 'Se analizează raportul...';
 
     const allBrokersBk = getBrokerNames();
-    const reportedBk = (window._waBrokeriText||'').split('\n').filter(l=>l.startsWith('💠')).map(l=>l.replace('💠','').trim());
     const execReportsBk = window._lastReports ? window._lastReports.filter(r=>r.type==='exec') : [];
     const neraportatiBk = allBrokersBk.filter(n=>!execReportsBk.some(r=>nameMatch(r.name,n)));
-    const contextBk = neraportatiBk.length ? `\nFără raport execuție azi: ${neraportatiBk.join(', ')}` : '\nToți au raportat.';
-    let historicCtxBk = '', eil3 = false, eis3 = false, dow3 = new Date().getDay();
+    const contextBk = neraportatiBk.length ? `\nFără raport azi: ${neraportatiBk.join(', ')}` : '\nToți au raportat.';
+    // Folosim istoricul precalculat in fundal sau calculam instant
+    let historicCtxBk = '', eil3 = false, dow3 = new Date().getDay() === 0 ? 7 : new Date().getDay();
     try {
-      const hist = await buildHistoricalContext();
-      historicCtxBk = hist.ctx; eil3 = hist.eInceputLuna; eis3 = hist.eInceputSaptamana; dow3 = hist.dow;
+      const hist = window._brokerHistoric || await buildHistoricalContext();
+      historicCtxBk = hist.ctx; eil3 = hist.eInceputLuna; dow3 = hist.dow;
     } catch(he) { console.warn('Historic ctx error:', he); }
+    const todayBk = new Date();
     const eFinSapt3 = dow3 >= 4;
+    const zileLunaScurse = todayBk.getDate();
+    const zileLunaTotal = new Date(todayBk.getFullYear(), todayBk.getMonth()+1, 0).getDate();
     const prompt = `Ești directorul de vânzări la Blitz Imobiliare. Analizează activitatea de prospectări și vizionări a brokerilor.
 IMPORTANT: Folosește DOAR termenii: "prospectări" și "vizionări" (niciodată "viziuni").
 Standard lunar: 10 prospectări realizate, 19 vizionări realizate per broker.
+Suntem în ziua ${zileLunaScurse} din ${zileLunaTotal} ale lunii.${eil3 ? ' ÎNCEPUT DE LUNĂ – nu compara cu luna trecută.' : ''}
 
-Raport brokeri (${eInceputLuna ? 'început de lună' : 'perioada selectată'}):
+Raport brokeri:
 ${reportText}${contextBk}${historicCtxBk}
 
 Reguli STRICTE:
 - Română, ton direct și concis
 - MAXIM 75 de cuvinte total
-- ${eil3 ? 'Început de lună – nu compara cu luna trecută. Comentează doar activitatea din perioadă.' : 'Compară față de ținta proporțională și luna precedentă.'}
-- ${eFinSapt3 ? 'Sfârșit de săptămână – oferă recomandări SPECIFICE per broker (ex: "X să facă mai multe vizionări săptămâna viitoare", "Y să se concentreze pe prospectări").' : 'Nu da recomandări de viitor, doar feedback pe perioada selectată.'}
-- Identifică tendințe reale (slab constant vs excepție)
+- ${eil3 ? 'Nu compara cu luna trecută, e prea devreme.' : 'Poți face referire la progresul față de targetul lunar.'}
+- ${eFinSapt3 ? 'Sfârșit de săptămână – oferă recomandări SPECIFICE per broker (ex: "X să facă mai multe vizionări", "Y să se concentreze pe prospectări").' : 'Doar feedback pe activitatea din perioadă, fără recomandări de viitor.'}
 
-Format: 📊 [general] | ⭐ [top] | ⚠️ [slab/absent] ${eFinSapt3 ? '| 🎯 [recomandări specifice per broker pentru săptămâna viitoare]' : ''}`;
+Format: 📊 [general] | ⭐ [top] | ⚠️ [slab/absent] ${eFinSapt3 ? '| 🎯 [recomandări per broker]' : ''}`;
 
     try {
       const response = await fetch(
