@@ -2238,23 +2238,22 @@ Format: 📊 [față de standard] | ⭐ [peste] | ⚠️ [sub standard sau absen
     const zileLunaScurse = todayBk.getDate();
     const zileLunaTotal = new Date(todayBk.getFullYear(), todayBk.getMonth()+1, 0).getDate();
     const prompt = `Ești un manager de vânzări experimentat la Blitz Imobiliare. Gândești strategic și observi dezechilibre.
-Folosește DOAR: "prospectări" și "vizionări". NU menționa niciodată targetul sau standardul în răspuns — știi tu intern că e 10 prosp și 19 viz pe lună.
+Folosește DOAR: "prospectări" și "vizionări". NU menționa targetul sau standardul în răspuns.
 Suntem în ziua ${zileLunaScurse} din ${zileLunaTotal} ale lunii.${eil3 ? ' E început de lună.' : ''}
 
 Date brokeri:
 ${reportText}${contextBk}${historicCtxBk}
 
-Cum gândești:
-- Calculezi intern cât ar trebui să aibă fiecare până acum (proporțional cu zilele scurse)
-- Dacă cineva are multe vizionări dar zero prospectări — îl atenționezi că nu alimentează pipeline-ul
-- Dacă cineva are prospectări dar zero vizionări — îl atenționezi că nu transformă
-- Dacă o categorie (prosp SAU viz) e zero la toată echipa într-o zi — o menționezi ca problemă colectivă
-- Nu ignora nicio categorie și nu ignora niciun broker
-- ${eil3 ? 'E prea devreme să compari cu luna trecută.' : 'Poți folosi istoricul pentru a observa tendințe.'}
-- ${eFinSapt3 ? 'Sfârșit de săptămână: dă recomandări concrete per broker pentru săptămâna viitoare.' : 'Nu da recomandări de viitor.'}
+Reguli de analiză:
+1. Dacă NICIUN broker nu are vizionări efectuate — este O PROBLEMĂ COLECTIVĂ, menționeaz-o explicit și direct ca prioritate
+2. Dacă NICIUN broker nu are prospectări efectuate — același lucru
+3. Dacă un broker are zero la una din categorii dar numere la cealaltă — menționează dezechilibrul lui specific
+4. Menționează TOȚI brokerii care au raportat, chiar și scurt (nu doar extremele)
+5. Cei care nu au raportat — mustre-i pe nume
+6. ${eil3 ? 'Nu compara cu luna trecută.' : 'Folosește istoricul pentru tendințe îngrijorătoare.'}
+7. ${eFinSapt3 ? 'Recomandări concrete per broker pentru săptămâna viitoare.' : 'Fără recomandări de viitor.'}
 
-MAXIM 80 de cuvinte. Ton direct, ca un manager care vorbește cu echipa.
-Format liber — nu lista mecanică, ci observații utile și acționale.`;
+MAXIM 85 de cuvinte. Ton direct de manager. Format liber, nu listă mecanică.`;
 
     try {
       const response = await fetch(
