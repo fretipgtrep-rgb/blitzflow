@@ -1935,6 +1935,85 @@
 
 
 
+  // ── CONTEXT ISTORIC PENTRU GEMINI ───────────────────────────
+  async function buildHistoricalContext() {
+    try {
+      const snapshot = await window.dbGet(window.dbRef(window.DB, teamPath()));
+      const allData = snapshot.val() || {};
+      const brokers = getBrokerNames();
+      const today = new Date();
+
+      // Calculam perioada: saptamana curenta + precedenta (14 zile)
+      const twoWeeksAgo = new Date(today);
+      twoWeeksAgo.setDate(today.getDate() - 14);
+
+      // Calculam luna curenta si precedenta
+      const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const lastMonthEnd   = new Date(today.getFullYear(), today.getMonth(), 0);
+
+      // Agregam date per broker pe saptamana curenta si luna curenta/precedenta
+      const statsBroker = {};
+      brokers.forEach(n => {
+        statsBroker[normName(n)] = {
+          name: n,
+          week:  { zile:0, prosp_real:0, prosp_stab:0, viz_real:0, viz_stab:0 },
+          month: { zile:0, prosp_real:0, prosp_stab:0, viz_real:0, viz_stab:0 },
+          lastMonth: { zile:0, prosp_real:0, prosp_stab:0, viz_real:0, viz_stab:0 },
+        };
+      });
+
+      Object.keys(allData).forEach(dateKey => {
+        const p = dateKey.split('-');
+        if(p.length !== 3) return;
+        const d = new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0]), 12,0,0);
+        const inWeek  = d >= twoWeeksAgo && d <= today;
+        const inMonth = d >= thisMonthStart && d <= today;
+        const inLastM = d >= lastMonthStart && d <= lastMonthEnd;
+        if(!inWeek && !inMonth && !inLastM) return;
+
+        Object.values(allData[dateKey]).forEach(r => {
+          if(r.type !== 'exec') return;
+          const key = normName(r.name);
+          if(!statsBroker[key]) return;
+          const add = (bucket) => {
+            bucket.zile++;
+            bucket.prosp_real += r.prosp_real||0;
+            bucket.prosp_stab += r.prosp_stab||0;
+            bucket.viz_real   += r.viz_real||0;
+            bucket.viz_stab   += r.viz_stab2||0;
+          };
+          if(inWeek)  add(statsBroker[key].week);
+          if(inMonth) add(statsBroker[key].month);
+          if(inLastM) add(statsBroker[key].lastMonth);
+        });
+      });
+
+      // Construim textul de context
+      let ctx = `\n\n━━━ CONTEXT ISTORIC ECHIPĂ (din Firebase) ━━━\n`;
+      ctx += `Perioada analizată: ultimele 2 săptămâni + luna curentă vs luna precedentă\n\n`;
+
+      brokers.forEach(n => {
+        const s = statsBroker[normName(n)];
+        if(!s) return;
+        const w = s.week, m = s.month, lm = s.lastMonth;
+        ctx += `👤 ${n}\n`;
+        ctx += `  Ultimele 14 zile: ${w.zile} zile raportate | Prosp: ${w.prosp_real} ef/${w.prosp_stab} stab | Viz: ${w.viz_real} ef/${w.viz_stab} stab\n`;
+        ctx += `  Luna curentă:     ${m.zile} zile raportate | Prosp: ${m.prosp_real} ef/${m.prosp_stab} stab | Viz: ${m.viz_real} ef/${m.viz_stab} stab\n`;
+        ctx += `  Luna precedentă:  ${lm.zile} zile raportate | Prosp: ${lm.prosp_real} ef/${lm.prosp_stab} stab | Viz: ${lm.viz_real} ef/${lm.viz_stab} stab\n`;
+        if(w.zile === 0) ctx += `  ⚠️ ZERO rapoarte în ultimele 2 săptămâni!\n`;
+        else if(lm.zile > 0 && m.prosp_real < lm.prosp_real * 0.5)
+          ctx += `  📉 Prospectări luna curentă mult sub luna precedentă!\n`;
+      });
+
+      ctx += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+      return ctx;
+    } catch(e) {
+      console.error('buildHistoricalContext error:', e);
+      return '';
+    }
+  }
+
   // ── GEMINI pentru raport echipă (WA modal) ────────────────
   window.generateGeminiWa = async function() {
     const btn = document.getElementById('geminiWaBtn');
@@ -1954,17 +2033,29 @@
     result.style.display = 'block';
     result.textContent = 'Se analizează raportul...';
 
-    const prompt = `Ești un manager experimentat în imobiliare. Analizează raportul de activitate al echipei și oferă o concluzie scurtă și sfaturi concrete.
+    const allBrokers = getBrokerNames();
+    const reportedNames = (window._waBrokeriText||'').split('\n').filter(l=>l.startsWith('💠')).map(l=>l.replace('💠','').trim());
+    const neraportati = allBrokers.filter(n=>!reportedNames.some(r=>nameMatch(r,n)));
+    const contextEchipa = neraportati.length ? `\nBrokeri care NU au raportat azi: ${neraportati.join(', ')}` : '\nToți brokerii au raportat azi.';
+    const historicCtx = await buildHistoricalContext();
+    const prompt = `Ești directorul de vânzări la Blitz Imobiliare. Analizează raportul zilei ȘI istoricul echipei din ultimele săptămâni.
 
-Raport:
-${reportText}
+Raport echipă AZI:
+${reportText}${contextEchipa}${historicCtx}
 
-Răspunde în română, concis. Format:
-📊 CONCLUZIE: [2-3 propoziții despre performanța echipei]
-💡 SFATURI:
-• [sfat concret 1]
-• [sfat concret 2]
-• [sfat concret 3]`;
+Reguli răspuns:
+- Limbă: română
+- Ton: direct, profesionist, motivant
+- Lungime: maxim 150 cuvinte total
+- Folosește datele istorice pentru a identifica tendințe (ex: cineva cu activitate în scădere față de luna trecută)
+- Mustră explicit brokerii care nu au raportat sau au activitate slabă constant
+- Laudă cu cifre concrete pe performeri
+
+Format strict:
+📊 [1-2 propoziții despre performanța zilei + trend față de perioadele anterioare]
+⭐ BINE: [nume + cifre relevante]
+⚠️ ATENȚIE: [nume + problemă specifică din istoric sau neraportare]
+💡 [1-2 acțiuni concrete pentru mâine bazate pe tendințe]`;
 
     try {
       const response = await fetch(
@@ -2008,18 +2099,31 @@ Răspunde în română, concis. Format:
     result.style.display = 'block';
     result.textContent = 'Se analizează raportul vs standard...';
 
-    const prompt = `Ești un manager experimentat în imobiliare. Analizează performanța echipei față de standardele Blitz și oferă o concluzie și recomandări.
+    const allBrokersStd = getBrokerNames();
+    const neraportatiStd = allBrokersStd.filter(n => {
+      const reps = (window._waStdText||'');
+      return !reps.includes(n) && !reps.includes(normName(n));
+    });
+    const contextStd = neraportatiStd.length ? `\nBrokeri care NU au raportat: ${neraportatiStd.join(', ')}` : '\nToți brokerii au raportat.';
+    const historicCtxStd = await buildHistoricalContext();
+    const prompt = `Ești directorul de vânzări la Blitz Imobiliare. Analizează performanța față de standard ȘI tendințele din ultimele săptămâni/luni.
 
 Raport vs Standard:
-${reportText}
+${reportText}${contextStd}${historicCtxStd}
 
-Răspunde în română, concis. Format:
-📊 CONCLUZIE: [evaluare generală față de standard]
-⭐ PERFORMERI: [brokeri peste standard]
-⚠️ ATENȚIE: [brokeri sub standard și ce trebuie îmbunătățit]
-💡 PLAN ACȚIUNE:
-• [acțiune concretă 1]
-• [acțiune concretă 2]`;
+Reguli răspuns:
+- Limbă: română
+- Ton: direct, exigent, constructiv
+- Lungime: maxim 150 cuvinte total
+- Compară cifrele reale cu standardul și cu istoricul (luna trecută vs curentă)
+- Identifică brokeri cu tendință negativă susținută și menționează-i explicit
+- Mustră brokerii care nu au raportat
+
+Format strict:
+📊 [evaluare generală față de standard + trend față de luna precedentă]
+⭐ PESTE STANDARD: [nume + cifre + trend]
+⚠️ SUB STANDARD: [nume + ce lipsește + dacă e tendință sau excepție]
+💡 [1-2 acțiuni concrete bazate pe tendințele observate]`;
 
     try {
       const response = await fetch(
@@ -2088,22 +2192,29 @@ Răspunde în română, concis. Format:
     result.style.display = 'block';
     result.textContent = 'Se analizează raportul...';
 
-    const prompt = `Ești un manager experimentat în imobiliare. Analizează raportul de activitate al echipei de brokeri și oferă:
-1. O concluzie scurtă (2-3 propoziții) despre performanța echipei
-2. 2-3 sfaturi concrete și acționabile pentru ziua/săptămâna următoare
-3. Evidențiază cine a performat bine și cine are nevoie de îmbunătățiri
+    const allBrokersBk = getBrokerNames();
+    const reportedBk = (window._waBrokeriText||'').split('\n').filter(l=>l.startsWith('💠')).map(l=>l.replace('💠','').trim());
+    const neraportatiBk = allBrokersBk.filter(n=>!reportedBk.some(r=>nameMatch(r,n)));
+    const contextBk = neraportatiBk.length ? `\nBrokeri fără activitate în această perioadă: ${neraportatiBk.join(', ')}` : '\nToți brokerii au activitate în perioadă.';
+    const historicCtxBk = await buildHistoricalContext();
+    const prompt = `Ești directorul de vânzări la Blitz Imobiliare. Analizează prospectările și vizionările brokerilor ȘI tendințele lor din ultimele săptămâni.
 
-Raport:
-${reportText}
+Raport individual brokeri (perioada selectată):
+${reportText}${contextBk}${historicCtxBk}
 
-Răspunde în română, concis și direct. Folosește emoji-uri relevante. Format:
-📊 CONCLUZIE: [concluzia]
-💡 SFATURI:
-• [sfat 1]
-• [sfat 2]
-• [sfat 3]
-⭐ PERFORMERI: [nume brokeri buni]
-⚠️ ATENȚIE: [nume brokeri care au nevoie de sprijin]`;
+Reguli răspuns:
+- Limbă: română
+- Ton: direct, motivant, ferm
+- Lungime: maxim 150 cuvinte total
+- Folosește istoricul pentru a identifica cine are activitate în scădere față de luna trecută
+- Recomandă acțiuni specifice pentru brokerii cu activitate slabă constantă
+- Nu repeta datele brute, oferă interpretare și direcție clară
+
+Format strict:
+📊 [1 propoziție despre nivelul general de prospectare/vizionări + comparație cu luna precedentă]
+⭐ TOP: [broker + cifră + trend pozitiv dacă există]
+⚠️ TREBUIE MAI MULT: [brokeri în scădere sau inactivi + recomandare specifică]
+💡 [1 acțiune concretă pentru toată echipa bazată pe tendințe]`;
 
     try {
       const response = await fetch(
