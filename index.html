@@ -1894,14 +1894,18 @@
 
     getBrokerNames().forEach(name => {
       const be = execs.filter(r=>nameMatch(r.name,name));
-      const bp = plans.filter(r=>nameMatch(r.name,name));
+      if(!be.length) return; // sarim brokerii fara niciun raport exec in perioada
       const prosp_real = be.reduce((s,r)=>s+(r.prosp_real||0),0);
-      const prosp_stab = bp.reduce((s,r)=>s+(r.prosp_stab||0),0);
+      const prosp_stab = be.reduce((s,r)=>s+(r.prosp_stab||0),0);
       const viz_real   = be.reduce((s,r)=>s+(r.viz_real||0),0);
-      const viz_stab   = bp.reduce((s,r)=>s+(r.vizi_stab2||0),0);
+      const viz_stab   = be.reduce((s,r)=>s+(r.viz_stab2||0),0);
       waText += `\n💠 ${name}\n`;
-      waText += `🏠 Prospectări: ${prosp_real} realizate / ${prosp_stab} stabilite\n`;
-      waText += `👀 Vizionări: ${viz_real} realizate / ${viz_stab} stabilite\n`;
+      if(prosp_real || prosp_stab)
+        waText += `🏠 Prospectări: ${prosp_real} efectuate / ${prosp_stab} stabilite\n`;
+      if(viz_real || viz_stab)
+        waText += `👀 Vizionări: ${viz_real} efectuate / ${viz_stab} stabilite\n`;
+      if(!prosp_real && !prosp_stab && !viz_real && !viz_stab)
+        waText += `— Fără activitate\n`;
     });
 
     waText += `\n${'─'.repeat(32)}\n📱 BlitzReport | Blitz Imobiliare`;
