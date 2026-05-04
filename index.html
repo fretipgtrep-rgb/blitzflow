@@ -2237,21 +2237,24 @@ Format: 📊 [față de standard] | ⭐ [peste] | ⚠️ [sub standard sau absen
     const eFinSapt3 = dow3 >= 4;
     const zileLunaScurse = todayBk.getDate();
     const zileLunaTotal = new Date(todayBk.getFullYear(), todayBk.getMonth()+1, 0).getDate();
-    const prompt = `Ești directorul de vânzări la Blitz Imobiliare. Analizează activitatea de prospectări și vizionări a brokerilor.
-IMPORTANT: Folosește DOAR termenii: "prospectări" și "vizionări" (niciodată "viziuni").
-Standard lunar: 10 prospectări realizate, 19 vizionări realizate per broker.
-Suntem în ziua ${zileLunaScurse} din ${zileLunaTotal} ale lunii.${eil3 ? ' ÎNCEPUT DE LUNĂ – nu compara cu luna trecută.' : ''}
+    const prompt = `Ești un manager de vânzări experimentat la Blitz Imobiliare. Gândești strategic și observi dezechilibre.
+Folosește DOAR: "prospectări" și "vizionări". NU menționa niciodată targetul sau standardul în răspuns — știi tu intern că e 10 prosp și 19 viz pe lună.
+Suntem în ziua ${zileLunaScurse} din ${zileLunaTotal} ale lunii.${eil3 ? ' E început de lună.' : ''}
 
-Raport brokeri:
+Date brokeri:
 ${reportText}${contextBk}${historicCtxBk}
 
-Reguli STRICTE:
-- Română, ton direct și concis
-- MAXIM 75 de cuvinte total
-- ${eil3 ? 'Nu compara cu luna trecută, e prea devreme.' : 'Poți face referire la progresul față de targetul lunar.'}
-- ${eFinSapt3 ? 'Sfârșit de săptămână – oferă recomandări SPECIFICE per broker (ex: "X să facă mai multe vizionări", "Y să se concentreze pe prospectări").' : 'Doar feedback pe activitatea din perioadă, fără recomandări de viitor.'}
+Cum gândești:
+- Calculezi intern cât ar trebui să aibă fiecare până acum (proporțional cu zilele scurse)
+- Dacă cineva are multe vizionări dar zero prospectări — îl atenționezi că nu alimentează pipeline-ul
+- Dacă cineva are prospectări dar zero vizionări — îl atenționezi că nu transformă
+- Dacă o categorie (prosp SAU viz) e zero la toată echipa într-o zi — o menționezi ca problemă colectivă
+- Nu ignora nicio categorie și nu ignora niciun broker
+- ${eil3 ? 'E prea devreme să compari cu luna trecută.' : 'Poți folosi istoricul pentru a observa tendințe.'}
+- ${eFinSapt3 ? 'Sfârșit de săptămână: dă recomandări concrete per broker pentru săptămâna viitoare.' : 'Nu da recomandări de viitor.'}
 
-Format: 📊 [general] | ⭐ [top] | ⚠️ [slab/absent] ${eFinSapt3 ? '| 🎯 [recomandări per broker]' : ''}`;
+MAXIM 80 de cuvinte. Ton direct, ca un manager care vorbește cu echipa.
+Format liber — nu lista mecanică, ci observații utile și acționale.`;
 
     try {
       const response = await fetch(
