@@ -2064,10 +2064,11 @@
     result.style.display = 'block';
     result.textContent = 'Se analizează raportul...';
 
+    // Neraportati: cei care nu apar in sectiunea de execuție din raportul zilei
     const allBrokers = getBrokerNames();
-    const reportedNames = (window._waBrokeriText||'').split('\n').filter(l=>l.startsWith('💠')).map(l=>l.replace('💠','').trim());
-    const neraportati = allBrokers.filter(n=>!reportedNames.some(r=>nameMatch(r,n)));
-    const contextEchipa = neraportati.length ? `\nBrokeri fără raport azi: ${neraportati.join(', ')}` : '\nToți brokerii au raportat azi.';
+    const execReports = window._lastReports ? window._lastReports.filter(r=>r.type==='exec') : [];
+    const neraportati = allBrokers.filter(n=>!execReports.some(r=>nameMatch(r.name,n)));
+    const contextEchipa = neraportati.length ? `\nBrokeri fără raport execuție azi: ${neraportati.join(', ')}` : '\nToți brokerii au raportat execuția azi.';
     const { ctx: historicCtx, eInceputLuna, eInceputSaptamana, dow } = await buildHistoricalContext();
     const eFinSaptamana = dow >= 4; // Joi sau Vineri = recomandari de perspectiva
     const prompt = `Ești directorul de vânzări la Blitz Imobiliare. Analizează raportul zilei.
@@ -2130,11 +2131,9 @@ Format: 📊 [ziua] | ⭐ [bine] | ⚠️ [atenție] ${eFinSaptamana ? '| 🎯 [
     result.textContent = 'Se analizează raportul vs standard...';
 
     const allBrokersStd = getBrokerNames();
-    const neraportatiStd = allBrokersStd.filter(n => {
-      const reps = (window._waStdText||'');
-      return !reps.includes(n) && !reps.includes(normName(n));
-    });
-    const contextStd = neraportatiStd.length ? `\nFără raport: ${neraportatiStd.join(', ')}` : '\nToți au raportat.';
+    const execReportsStd = window._lastReports ? window._lastReports.filter(r=>r.type==='exec') : [];
+    const neraportatiStd = allBrokersStd.filter(n=>!execReportsStd.some(r=>nameMatch(r.name,n)));
+    const contextStd = neraportatiStd.length ? `\nFără raport execuție azi: ${neraportatiStd.join(', ')}` : '\nToți brokerii au raportat execuția azi.';
     const { ctx: historicCtxStd, eInceputLuna: eil2, eInceputSaptamana: eis2, dow: dow2 } = await buildHistoricalContext();
     const eFinSapt2 = dow2 >= 4;
     const prompt = `Ești directorul de vânzări la Blitz Imobiliare. Analizează performanța față de standardul zilnic Blitz.
@@ -2217,6 +2216,7 @@ Format: 📊 [față de standard] | ⭐ [peste] | ⚠️ [sub standard sau absen
     btn.textContent = '⏳ Se generează...';
     btn.disabled = true;
     result.style.display = 'block';
+    result.style.color = '#a5b4fc';
     result.textContent = 'Se analizează raportul...';
 
     const allBrokersBk = getBrokerNames();
@@ -2249,7 +2249,7 @@ Format: 📊 [general] | ⭐ [top] | ⚠️ [slab/absent] ${eFinSapt3 ? '| 🎯 
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.7, maxOutputTokens: 500 }
+            generationConfig: { temperature: 0.7, maxOutputTokens: 300 }
           })
         }
       );
